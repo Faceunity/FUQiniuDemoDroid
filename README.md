@@ -1,6 +1,6 @@
-# PLDroidMediaStreaming-FU
+# FUQiniuDemoDroid
 
-PLDroidMediaStreaming-FU 是 Faceunity 的面部跟踪和虚拟道具功能在 PLDroidMediaStreaming 中的集成，作为一款推流SDK集成示例。PLDroidMediaStreaming 是一个适用于 Android 的 RTMP 直播推流 SDK，原版文档可以参考[这里](https://github.com/pili-engineering/PLDroidMediaStreaming/blob/master/README.md)。
+FUQiniuDemoDroid 是 Faceunity 的面部跟踪和虚拟道具功能在 PLDroidMediaStreaming 中的集成，作为一款推流SDK集成示例。PLDroidMediaStreaming 是一个适用于 Android 的 RTMP 直播推流 SDK，原版文档可以参考[这里](https://github.com/pili-engineering/PLDroidMediaStreaming/blob/master/README.md)。
 
 ## v3.0 重要更新
 在最新的版本中，全面升级了底层人脸数据库，数据库大小从原来的 10M 缩小到 3M ，同时取消了之前的 ar.mp3 数据。新的数据库可以支持稳定的全头模型，从而支持更好的道具定位、面部纹理；同时新的数据库强化了跟踪模块，从而提升虚拟化身道具的表情响应度和精度。
