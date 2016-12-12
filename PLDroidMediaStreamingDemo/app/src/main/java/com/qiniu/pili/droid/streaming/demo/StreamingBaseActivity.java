@@ -449,11 +449,15 @@ public class StreamingBaseActivity extends Activity implements
     @Override
     public void onSurfaceCreated() {
         try{
-	        InputStream is=getAssets().open("v3.mp3");
-	        byte[] v3data=new byte[is.available()];
-	        is.read(v3data);
+	        InputStream is=getAssets().open("v2.mp3");
+	        byte[] v2data=new byte[is.available()];
+	        is.read(v2data);
 	        is.close();
-            faceunity.fuSetup(v3data, null, null);
+            is=getAssets().open("ar.mp3");
+            byte[] ardata=new byte[is.available()];
+            is.read(ardata);
+            is.close();
+            faceunity.fuSetup(v2data, ardata, null);
 	    }catch(IOException e){
 	    	Log.e(TAG, "IOException: "+e);
 	    }
