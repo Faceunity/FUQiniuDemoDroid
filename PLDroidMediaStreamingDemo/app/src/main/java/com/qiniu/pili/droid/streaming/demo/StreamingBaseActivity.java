@@ -453,7 +453,13 @@ public class StreamingBaseActivity extends Activity implements
 	        byte[] v3data=new byte[is.available()];
 	        is.read(v3data);
 	        is.close();
-            faceunity.fuSetup(v3data, null, null);
+            /**
+             * fuSetup parameter explanation
+             * @param v3data
+             * @param null, old parameter, consider removed in the future
+             * @param authpack.A(), auth key byte array content
+             **/
+            faceunity.fuSetup(v3data, null, authpack.A());
 	    }catch(IOException e){
 	    	Log.e(TAG, "IOException: "+e);
 	    }

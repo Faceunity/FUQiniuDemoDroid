@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.qiniu.pili.droid.streaming.demo"
-        minSdkVersion 17
+        minSdkVersion 16
         targetSdkVersion 23
         versionCode 40
         versionName "2.0.4-1"
