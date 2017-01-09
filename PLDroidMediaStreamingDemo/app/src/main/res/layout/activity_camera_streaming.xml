@@ -115,7 +115,7 @@
         android:layout_above="@+id/colorLevel_seekBar"
         android:layout_marginBottom="20dp"
         android:max="100"
-        android:progress="50"/>
+        android:progress="100"/>
     <SeekBar
         android:id="@+id/colorLevel_seekBar"
         android:layout_alignParentBottom="true"

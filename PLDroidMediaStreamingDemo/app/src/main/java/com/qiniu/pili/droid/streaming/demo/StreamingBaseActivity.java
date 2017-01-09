@@ -437,7 +437,7 @@ public class StreamingBaseActivity extends Activity implements
             if (m_is_sw_encoding){
                 faceunity.fuItemSetParam(m_items[1], "filter_name", m_filters[m_cur_filter_id]);
                 faceunity.fuItemSetParam(m_items[1], "color_level", m_faceunity_color_level);
-                faceunity.fuItemSetParam(m_items[1], "blur_radius", m_faceunity_blur_level);
+                faceunity.fuItemSetParam(m_items[1], "blur_level", m_faceunity_blur_level);
                 m_cur_texid = faceunity.fuRenderToNV21Image(bytes,width,height,m_frame_id++,m_items);
             }else{
                 m_cur_image=bytes;
@@ -479,7 +479,7 @@ public class StreamingBaseActivity extends Activity implements
 
     public double m_faceunity_beautification_level=1.0;
     public double m_faceunity_color_level = 1.0;
-    public double m_faceunity_blur_level = 8.0;
+    public int m_faceunity_blur_level = 5;
 
     @Override
     public int onDrawFrame(int texId, int texWidth, int texHeight, float[] transformMatrix) {
@@ -824,7 +824,7 @@ public class StreamingBaseActivity extends Activity implements
         seekBarBlur.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                m_faceunity_blur_level = (double)(progress/(100.0f/16.0f));
+                m_faceunity_blur_level = Math.round(progress/(100.0f/5f));
             }
 
             @Override
