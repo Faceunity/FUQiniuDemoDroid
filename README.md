@@ -2,8 +2,11 @@
 
 FUQiniuDemoDroid 是 Faceunity 的面部跟踪和虚拟道具功能在 PLDroidMediaStreaming 中的集成，作为一款推流SDK集成示例。PLDroidMediaStreaming 是一个适用于 Android 的 RTMP 直播推流 SDK，原版文档可以参考[这里](https://github.com/pili-engineering/PLDroidMediaStreaming/blob/master/README.md)。
 
+## v3.1 美颜更新
+在v3.1中，全面更新了美颜的功能和效果。改进了磨皮算法，使得在细腻皮肤的同时充分保持皮肤的细节，减少涂抹感。增加智能美型功能，可以自然地实现瘦脸和大眼效果，并可根据需要进行调节。
+
 ## v3.0 重要更新
-在最新的版本中，全面升级了底层人脸数据库，数据库大小从原来的 10M 缩小到 3M ，同时取消了之前的 ar.mp3 数据。新的数据库可以支持稳定的全头模型，从而支持更好的道具定位、面部纹理；同时新的数据库强化了跟踪模块，从而提升虚拟化身道具的表情响应度和精度。
+在v3.0中，全面升级了底层人脸数据库，数据库大小从原来的 10M 缩小到 3M ，同时取消了之前的 ar.mp3 数据。新的数据库可以支持稳定的全头模型，从而支持更好的道具定位、面部纹理；同时新的数据库强化了跟踪模块，从而提升虚拟化身道具的表情响应度和精度。
 
 由于升级了底层数据表达，v2.0 版本下的道具将全面不兼容。我司制作的道具请联系我司获取升级之后的道具包。自行制作的道具请联系我司获取道具升级工具和技术支持。
 
@@ -78,32 +81,61 @@ fuDualInputTexture调用例程如
 ```
 
 ## 视频美颜
-Android如果开启美颜，需要在初始化的时候加载`face_beautification.mp3`，然后绘制时设置相关参数`color_level`,`blur_radius`和`filter_name`来控制美颜程度、滤镜种类。
 
-其中`filter_name`为滤镜名称，可通过传入不同的滤镜名称来切换滤镜种类。这里需要注意的是：默认使用"nature"作为美白滤镜，而不在使用"none"作为默认滤镜。目前支持的`filter_name`有
+美颜功能实现步骤与道具类似，首先加载美颜道具，并将 fuCreateItemFromPackage 返回的美颜道具handle保存下来，如例程中的 m_items[1]。
+
+之后，将该handle和其他需要绘制的道具一起传入绘制接口即可。加载美颜道具后不需设置任何参数，即可启用默认设置的美颜的效果。
+
+美颜道具主要包含四个模块的内容，滤镜，美白，磨皮，美型。每个模块可以调节的参数如下。
+
+#### 滤镜
+
+在目前版本中提供以下滤镜：
 ```Java
-    "nature", "delta", "electric", "slowlived", "tokyo", "warm"
-``` 
+"nature", "delta", "electric", "slowlived", "tokyo", "warm"
+```
 
-`color_level` 参数控制美白的程度，其值为 1.0 时为默认美白的程度，大于 1.0 的参数值可以进一步强化美白效果。该参数也对其他滤镜有效，其设置方法如下：
+其中 "nature" 作为默认的美白滤镜，其他滤镜属于风格化滤镜。切换滤镜时，通过 fuItemSetParams 设置美颜道具的参数，如：
+```C
+//  Set item parameters - filter
+faceunity.fuItemSetParam(m_items[1], "filter_name", "nature");
+```
 
-```Java
+#### 美白
+
+当滤镜设置为美白滤镜 "nature" 时，通过参数 color_level 来控制美白程度。当滤镜为其他风格化滤镜时，该参数用于控制风格化程度。该参数取值为大于等于0的浮点数，0为无效果，1为默认效果，大于1为继续增强效果。
+
+设置参数的例子代码如下：
+
+```C
+//  Set item parameters - whiten
 faceunity.fuItemSetParam(m_items[1], "color_level", 1.0);
 ```
 
-`blur_radius` 参数控制美颜磨皮的程度，数值为磨皮滤波的半径。中等磨皮可以设置为 8.0 ，重度磨皮可以设置为 16.0:
+#### 磨皮
 
-```Java
-faceunity.fuItemSetParam(m_items[1], "blur_radius", m_faceunity_blur_level);
+新版美颜中磨皮的参数改为了一个复合参数 blur_level ，其取值范围为0-5，对应6个不同的磨皮程度。
+
+设置参数的例子代码如下：
+
+```C
+//  Set item parameters - blur
+faceunity.fuItemSetParam(m_items[1], "blur_level", 5.0);
 ```
 
-综上，具体设置如
+如果对默认的6个磨皮等级不满意，想进一步自定义磨皮效果，可以联系我司获取内部参数调节的方式。
 
-```Java
-  faceunity.fuItemSetParam(m_items[1], "filter_name", m_filters[m_cur_filter_id]);
-  faceunity.fuItemSetParam(m_items[1], "color_level", m_faceunity_color_level);
-  faceunity.fuItemSetParam(m_items[1], "blur_radius", m_faceunity_blur_level);
+#### 美型
+
+目前我们支持两种美型模式，瘦脸和大眼，分别由 cheek_thinning 和 eye_enlarging 控制效果的强弱。两个参数的取值都为大于等于0的浮点数，0为关闭效果，1为默认效果，大于1为进一步增强效果。
+
+设置参数的例子代码如下：
+```C
+//  Set item parameters - shaping
+faceunity.fuItemSetParam(m_items[1], "cheek_thinning", 1.0);
+faceunity.fuItemSetParam(m_items[1], "eye_enlarging", 1.0);
 ```
+
 
 ## 注意
 
@@ -152,10 +184,10 @@ openssl ca -config ca.conf -gencrl -keyfile CERT_NAME.key -cert CERT_NAME.crt -o
 
 ```
 public class authpack {
-	...
-	public static byte[] A() {
-		...
-	}
+  ...
+  public static byte[] A() {
+    ...
+  }
 }
 ```
 
@@ -177,7 +209,7 @@ public class authpack {
 ```java
 /**
 \brief Initialization, must be called exactly once before all other functions.
-	Unlike the native version, you CAN discard the buffers after `fuInit` returns.
+  Unlike the native version, you CAN discard the buffers after `fuInit` returns.
 \param v2data should contain contents of the "v2.bin" we provide
 \param ardata should contain contents of the "ar.bin" we provide
 \param authdata should be the constant array we provide in "authpack.h"
@@ -186,7 +218,7 @@ void fuSetup(byte[] v2data,byte[] ardata,byte[] authdata);
 
 /**
 \brief Create an accessory item from a binary package, you can discard the data after the call.
-	This function MUST be called in the same GLES context / thread as fuRenderItems.
+  This function MUST be called in the same GLES context / thread as fuRenderItems.
 \param data should contain the package data
 \return an integer handle representing the item
 */
@@ -194,9 +226,9 @@ void fuCreateItemFromPackage(byte[] data);
 
 /**
 \brief Destroy an accessory item.
-	This function MUST be called in the same GLES context / thread as the original fuCreateItemFromPackage.
-	We MUST NOT destroy items in the wrong GLES context, or unpredictable things will happen.
-	If the GLES context has been lost outside our control, we'd better just throw away the handle and let the resources leak.
+  This function MUST be called in the same GLES context / thread as the original fuCreateItemFromPackage.
+  We MUST NOT destroy items in the wrong GLES context, or unpredictable things will happen.
+  If the GLES context has been lost outside our control, we'd better just throw away the handle and let the resources leak.
 \param item is the handle to be destroyed
 */
 void fuDestroyItem(int item);
@@ -208,12 +240,12 @@ void fuCreateEGLContext();
 
 /**
 \brief Render a list of items on top of an NV21 image.
-	This function needs a GLES 2.0+ context.
+  This function needs a GLES 2.0+ context.
 \param img specifies the NV21 img. Its content will be **overwritten** by the rendered image when fuRenderToNV21Image returns
 \param w specifies the image width
 \param h specifies the image height
 \param frameid specifies the current frame id. 
-	To get animated effects, please increase frame_id by 1 whenever you call this.
+  To get animated effects, please increase frame_id by 1 whenever you call this.
 \param items contains the list of items
 \return a GLES texture containing a copy of the rendered image
 */
@@ -223,15 +255,15 @@ public static final int FU_ADM_FLAG_EXTERNAL_OES_TEXTURE=1;
 public static final int FU_ADM_FLAG_ENABLE_READBACK=2;//<set this to additionally readback the rendering result to `img`
 /**
 \brief The fastest Android interface
-	This function needs a GLES 2.0+ context.
+  This function needs a GLES 2.0+ context.
 \param img specifies the NV21 img.
 \param texid specifies the GLES texture whose content matches `img`
 \param flags if the FU_ADM_FLAG_EXTERNAL_OES_TEXTURE bit is set in the flags, texid is interpreted as a GL_TEXTURE_EXTERNAL_OES texture
-	otherwise, texid is interpreted as a GL_TEXTURE_2D texture
+  otherwise, texid is interpreted as a GL_TEXTURE_2D texture
 \param w specifies the image width
 \param h specifies the image height
 \param frameid specifies the current frame id. 
-	To get animated effects, please increase frame_id by 1 whenever you call this.
+  To get animated effects, please increase frame_id by 1 whenever you call this.
 \param items contains the list of items
 \return a new GLES texture containing the rendered image
 */
@@ -239,14 +271,14 @@ int fuDualInputToTexture(byte[] img,int tex_in,int flags,int w,int h,int frame_i
 
 /**
 \brief Release resources allocated by the Java version of fuInit and destroy all created items.
-	If you ever intend to call the other functions again, you need to re-invoke fuInit before calling them.
+  If you ever intend to call the other functions again, you need to re-invoke fuInit before calling them.
 */
 void fuDone();
 
 /**
 \brief Call this function when the GLES context has been lost and recreated.
-	Our library isn't designed to cope with that... yet.
-	So this function leaks resources on each call.
+  Our library isn't designed to cope with that... yet.
+  So this function leaks resources on each call.
 */
 void fuOnDeviceLost();
 
