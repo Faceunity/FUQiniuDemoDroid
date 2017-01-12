@@ -117,7 +117,7 @@ public class MainActivity extends Activity {
             Log.e(TAG, "has permission");
         }
         String inputText = mInputUrlEditText.getText().toString().trim();
-        final String inputUrl = inputText.equals("") ? "rtmp://pili-publish.faceunity.com/faceunity-test/demotest" : inputText;
+        final String inputUrl = inputText.equals("") ? "rtmp://" : inputText;
         new Thread(new Runnable() {
             @Override
             public void run() {
