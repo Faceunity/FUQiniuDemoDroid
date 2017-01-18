@@ -418,7 +418,7 @@ public class StreamingBaseActivity extends Activity implements
     }
     static final String[] m_filters = {"nature", "delta", "electric", "slowlived", "tokyo", "warm"};
     int m_frame_id=0;
-    int[] m_items=new int[2];
+    int[] m_items=new int[3];
     int m_created_item_id=-1;
     int m_cur_item_id=0;
     int m_cur_filter_id = 0;
@@ -546,6 +546,18 @@ public class StreamingBaseActivity extends Activity implements
 	       	}catch(IOException e){
 	       		Log.e(TAG, "IOException: "+e);
 	       	}
+        }
+
+        if (m_items[2] == 0) {
+            try{
+                InputStream is=getAssets().open("heart.mp3");
+                byte[] item_data=new byte[is.available()];
+                is.read(item_data);
+                is.close();
+                m_items[2]=faceunity.fuCreateItemFromPackage(item_data);
+            }catch(IOException e){
+                Log.e(TAG, "IOException: "+e);
+            }
         }
 
         faceunity.fuItemSetParam(m_items[0], "isAndroid", 1.0);
