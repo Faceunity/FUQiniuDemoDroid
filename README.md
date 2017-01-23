@@ -2,8 +2,13 @@
 
 FUQiniuDemoDroid 是 Faceunity 的面部跟踪和虚拟道具功能在 PLDroidMediaStreaming 中的集成，作为一款推流SDK集成示例。PLDroidMediaStreaming 是一个适用于 Android 的 RTMP 直播推流 SDK，原版文档可以参考[这里](https://github.com/pili-engineering/PLDroidMediaStreaming/blob/master/README.md)。
 
+## v3.2 爱心手势识别
+在v3.2中加入了爱心手势识别，用户比出爱心手势，可以触发特定的道具动效。目前线上提供了一个简单的演示用手势道具，自定义手势道具的流程和2D道具制作一致，具体打包的细节可以联系我司技术支持。
+
+手势识别的技术细节参见[这里](https://github.com/Faceunity/FUQiniuDemoDroid#手势识别)。
+
 ## v3.1 美颜更新
-在v3.1中，全面更新了美颜的功能和效果。改进了磨皮算法，使得在细腻皮肤的同时充分保持皮肤的细节，减少涂抹感。增加智能美型功能，可以自然地实现瘦脸和大眼效果，并可根据需要进行调节。
+在v3.1中，全面更新了美颜的功能和效果。改进了磨皮算法，使得在细腻皮肤的同时充分保持皮肤的细节，减少涂抹感。增加智能美型功能，可以自然地实现瘦脸和大眼效果，并可根据需要进行调节。具体细节可以参见[这里](https://github.com/Faceunity/FUQiniuDemoDroid#视频美颜)。
 
 ## v3.0 重要更新
 在v3.0中，全面升级了底层人脸数据库，数据库大小从原来的 10M 缩小到 3M ，同时取消了之前的 ar.mp3 数据。新的数据库可以支持稳定的全头模型，从而支持更好的道具定位、面部纹理；同时新的数据库强化了跟踪模块，从而提升虚拟化身道具的表情响应度和精度。
@@ -135,6 +140,13 @@ faceunity.fuItemSetParam(m_items[1], "blur_level", 5.0);
 faceunity.fuItemSetParam(m_items[1], "cheek_thinning", 1.0);
 faceunity.fuItemSetParam(m_items[1], "eye_enlarging", 1.0);
 ```
+
+## 手势识别
+目前我们的手势识别功能也是以道具的形式进行加载的。一个手势识别的道具中包含了要识别的手势、识别到该手势时触发的动效、及控制脚本。加载该道具的过程和加载普通道具、美颜道具的方法一致。
+
+线上例子中 heart.mp3 为爱心手势演示道具。将其作为道具加载进行绘制即可启用手势识别功能。手势识别道具可以和普通道具及美颜共存，类似美颜将 m_items 扩展为三个并在最后加载手势道具即可。
+
+自定义手势道具的流程和2D道具制作一致，具体打包的细节可以联系我司技术支持。
 
 
 ## 注意
