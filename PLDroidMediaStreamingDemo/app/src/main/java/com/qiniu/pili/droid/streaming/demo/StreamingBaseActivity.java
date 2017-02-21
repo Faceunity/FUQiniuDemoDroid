@@ -574,6 +574,7 @@ public class StreamingBaseActivity extends Activity implements
                 faceunity.fuItemSetParam(m_items[1], "blur_radius", m_faceunity_blur_level);
                 faceunity.fuItemSetParam(m_items[1], "color_level", m_faceunity_color_level);
                 newTexId=faceunity.fuDualInputToTexture(m_cur_image, texId, 0, texWidth, texHeight, m_frame_id++, m_items);
+                //newTexId=faceunity.fuBeautifyImage(texId, 0, texWidth, texHeight, m_frame_id++, m_items);
             }else{
                 newTexId=texId;
             }
