@@ -406,7 +406,7 @@ public class StreamingBaseActivity extends Activity implements
     }
 
     //////////////////
-    static final String[] m_item_names={"tiara.mp3", "item0208.mp3", "einstein.mp3", "YellowEar.mp3", "PrincessCrown.mp3",
+    static final String[] m_item_names={"tiara.mp3", "item0208.mp3", "YellowEar.mp3", "PrincessCrown.mp3",
             "Mood.mp3", "Deer.mp3", "BeagleDog.mp3", "item0501.mp3", "ColorCrown.mp3", "item0210.mp3",  "HappyRabbi.mp3",
             "item0204.mp3", "hartshorn.mp3"};
     static final String[] m_item_hints = new String[m_item_names.length];
@@ -574,7 +574,6 @@ public class StreamingBaseActivity extends Activity implements
                 faceunity.fuItemSetParam(m_items[1], "blur_radius", m_faceunity_blur_level);
                 faceunity.fuItemSetParam(m_items[1], "color_level", m_faceunity_color_level);
                 newTexId=faceunity.fuDualInputToTexture(m_cur_image, texId, 0, texWidth, texHeight, m_frame_id++, m_items);
-                //newTexId=faceunity.fuBeautifyImage(texId, 0, texWidth, texHeight, m_frame_id++, m_items);
             }else{
                 newTexId=texId;
             }
@@ -837,7 +836,7 @@ public class StreamingBaseActivity extends Activity implements
         seekBarBlur.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                m_faceunity_blur_level = Math.round(progress/(100.0f/5f));
+                m_faceunity_blur_level = Math.round(progress/(100.0f/6.0f));
             }
 
             @Override
