@@ -548,7 +548,7 @@ public class StreamingBaseActivity extends Activity implements
 	       	}
         }
 
-        if (m_items[2] == 0) {
+        /*if (m_items[2] == 0) {
             try{
                 InputStream is=getAssets().open("heart.mp3");
                 byte[] item_data=new byte[is.available()];
@@ -558,7 +558,7 @@ public class StreamingBaseActivity extends Activity implements
             }catch(IOException e){
                 Log.e(TAG, "IOException: "+e);
             }
-        }
+        }*/
 
         faceunity.fuItemSetParam(m_items[0], "isAndroid", 1.0);
         int newTexId=0;
@@ -571,7 +571,7 @@ public class StreamingBaseActivity extends Activity implements
         } else {
             if (m_cur_image != null) {
                 faceunity.fuItemSetParam(m_items[1], "filter_name", m_filters[m_cur_filter_id]);
-                faceunity.fuItemSetParam(m_items[1], "blur_radius", m_faceunity_blur_level);
+                faceunity.fuItemSetParam(m_items[1], "blur_level", m_faceunity_blur_level);
                 faceunity.fuItemSetParam(m_items[1], "color_level", m_faceunity_color_level);
                 newTexId=faceunity.fuDualInputToTexture(m_cur_image, texId, 0, texWidth, texHeight, m_frame_id++, m_items);
             }else{
