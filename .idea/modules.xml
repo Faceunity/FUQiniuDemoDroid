@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/FUQiniuDemoDroid.iml" filepath="$PROJECT_DIR$/FUQiniuDemoDroid.iml" />
+      <module fileurl="file://C:\Users\zxcv\Desktop\Faceunity\FUQiniuMediaStreaming\FUQiniuDemoDroid\FUQiniuMediaStreamingDemoDroid.iml" filepath="C:\Users\zxcv\Desktop\Faceunity\FUQiniuMediaStreaming\FUQiniuDemoDroid\FUQiniuMediaStreamingDemoDroid.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/faceunity/faceunity.iml" filepath="$PROJECT_DIR$/faceunity/faceunity.iml" />
+    </modules>
+  </component>
+</project>

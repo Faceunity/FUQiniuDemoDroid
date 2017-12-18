@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorTranslucent">#00000000</color>
+    <color name="colorWhite">#ffffffff</color>
+
+    <color name="faceunityYellow">#ffcb15</color>
+    <color name="faceunityGreen">#2ddbb1</color>
+    <color name="unselect_gray">#48ffffff</color>
+
+    <color name="c80000000">#80000000</color>
+    <color name="percent60translucentBlack">#99000000</color>
+</resources>

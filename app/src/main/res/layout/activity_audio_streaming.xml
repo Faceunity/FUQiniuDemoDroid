@@ -1,0 +1,26 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black" >
+
+    <include layout="@layout/status" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/audio"
+        android:layout_centerInParent="true"
+        android:layout_margin="20dp"/>
+
+    <include layout="@layout/camera_button_holder" />
+
+    <Button
+        android:id="@+id/mix_panel_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:text="Audio mix panel"
+        android:textColor="@color/pldroid_streaming_white"
+        android:visibility="invisible" />
+
+</RelativeLayout>
