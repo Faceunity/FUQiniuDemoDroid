@@ -35,7 +35,6 @@ import com.qiniu.pili.droid.streaming.StreamingState;
 import com.qiniu.pili.droid.streaming.SurfaceTextureCallback;
 import com.qiniu.pili.droid.streaming.WatermarkSetting;
 import com.qiniu.pili.droid.streaming.demo.R;
-import com.qiniu.pili.droid.streaming.demo.gles.FBO;
 import com.qiniu.pili.droid.streaming.demo.plain.CameraConfig;
 import com.qiniu.pili.droid.streaming.demo.ui.CameraPreviewFrameView;
 import com.qiniu.pili.droid.streaming.demo.ui.RotateLayout;
@@ -83,7 +82,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
     private boolean mOrientationChanged = false;
     private int mCurrentCamFacingIndex;
 
-    private FBO mFBO = new FBO();
+//    private FBO mFBO = new FBO();
 
     private ScreenShooter mScreenShooter = new ScreenShooter();
     private Switcher mSwitcher = new Switcher();
@@ -882,7 +881,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         /**
          * only used in custom beauty algorithm case
          */
-        mFBO.initialize(this);
+//        mFBO.initialize(this);
         mFaceunityWrapper.onSurfaceCreated();
     }
 
@@ -892,7 +891,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         /**
          * only used in custom beauty algorithm case
          */
-        mFBO.updateSurfaceSize(width, height);
+//        mFBO.updateSurfaceSize(width, height);
     }
 
     @Override
@@ -901,7 +900,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         /**
          * only used in custom beauty algorithm case
          */
-        mFBO.release();
+//        mFBO.release();
         mFaceunityWrapper.onSurfaceDestroyed();
     }
 
@@ -910,8 +909,8 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
 
         int fuTexId = mFaceunityWrapper.onDrawFrame(texId, texWidth, texHeight);
 
-        int newTexId = mFBO.drawFrame(fuTexId, texWidth, texHeight);
-        return newTexId;
+//        int newTexId = mFBO.drawFrame(fuTexId, texWidth, texHeight);
+        return fuTexId;
     }
 
     private byte[] mCameraNV21Byte;

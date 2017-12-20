@@ -1,6 +1,7 @@
 package com.qiniu.pili.droid.streaming.demo.filter;
 
 import android.content.Context;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
 import com.qiniu.pili.droid.streaming.demo.R;
@@ -27,7 +28,7 @@ public class CameraFilter extends AbstractFilter implements IFilter {
 
     @Override
     public int getTextureTarget() {
-        return GLES20.GL_TEXTURE_2D;
+        return GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
     }
 
     @Override
