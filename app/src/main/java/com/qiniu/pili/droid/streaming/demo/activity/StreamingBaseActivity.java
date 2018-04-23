@@ -48,6 +48,7 @@ public abstract class StreamingBaseActivity extends Activity implements
 
     public static final String INPUT_TEXT = "INPUT_TEXT";
     public static final String AUDIO_CHANNEL_STEREO = "AUDIO_CHANNEL_STEREO";
+    public static final String TRANSFER_MODE_QUIC = "TRANSFER_MODE_QUIC";
 
     protected boolean mShutterButtonPressed = false;
     protected EncodingConfig mEncodingConfig;
@@ -97,6 +98,8 @@ public abstract class StreamingBaseActivity extends Activity implements
         Intent intent = getIntent();
         String inputText = intent.getStringExtra(INPUT_TEXT);
         int inputType = intent.getIntExtra(INPUT_TYPE, -1);
+        boolean quicEnable = intent.getBooleanExtra(TRANSFER_MODE_QUIC, false);
+        mProfile.setQuicEnable(quicEnable);
 
         if (inputType == INPUT_TYPE_URL) {
             // publish url
@@ -325,7 +328,8 @@ public abstract class StreamingBaseActivity extends Activity implements
                 vProfile = new StreamingProfile.VideoProfile(
                         mEncodingConfig.mVideoQualityCustomFPS,
                         mEncodingConfig.mVideoQualityCustomBitrate * 1024,
-                        mEncodingConfig.mVideoQualityCustomMaxKeyFrameInterval
+                        mEncodingConfig.mVideoQualityCustomMaxKeyFrameInterval,
+                        mEncodingConfig.mVideoQualityCustomProfile
                 );
             }
 
