@@ -1,1 +1,1 @@
-include ':app', ':beautycontrolview'
+include ':app', ':faceunity'
