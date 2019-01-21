@@ -2,7 +2,6 @@ package com.qiniu.pili.droid.streaming.demo.activity;
 
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
-import android.graphics.Point;
 import android.hardware.Camera;
 import android.media.AudioFormat;
 import android.os.Build;
@@ -21,12 +20,10 @@ import android.widget.Toast;
 
 import com.faceunity.beautycontrolview.BeautyControlView;
 import com.faceunity.beautycontrolview.FURenderer;
-import com.faceunity.wrapper.faceunity;
 import com.github.angads25.filepicker.controller.DialogSelectionListener;
 import com.github.angads25.filepicker.model.DialogConfigs;
 import com.github.angads25.filepicker.model.DialogProperties;
 import com.github.angads25.filepicker.view.FilePickerDialog;
-import com.qiniu.pili.droid.streaming.AVCodecType;
 import com.qiniu.pili.droid.streaming.CameraStreamingSetting;
 import com.qiniu.pili.droid.streaming.FrameCapturedCallback;
 import com.qiniu.pili.droid.streaming.MediaStreamingManager;
@@ -36,9 +33,7 @@ import com.qiniu.pili.droid.streaming.StreamingProfile;
 import com.qiniu.pili.droid.streaming.StreamingState;
 import com.qiniu.pili.droid.streaming.SurfaceTextureCallback;
 import com.qiniu.pili.droid.streaming.WatermarkSetting;
-import com.qiniu.pili.droid.streaming.av.common.PLFourCC;
 import com.qiniu.pili.droid.streaming.demo.R;
-import com.qiniu.pili.droid.streaming.demo.gles.FBO;
 import com.qiniu.pili.droid.streaming.demo.plain.CameraConfig;
 import com.qiniu.pili.droid.streaming.demo.ui.CameraPreviewFrameView;
 import com.qiniu.pili.droid.streaming.demo.ui.RotateLayout;
@@ -169,7 +164,8 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         mMediaStreamingManager.prepare(mCameraStreamingSetting, microphoneStreamingSetting, buildWatermarkSetting(), mProfile);
         mFaceunityControlView = (BeautyControlView) findViewById(R.id.faceunity_control);
         if (mCameraConfig.mIsCustomFaceBeauty) {
-            mFURenderer = new FURenderer.Builder(this).inputTextureType(faceunity.FU_ADM_FLAG_EXTERNAL_OES_TEXTURE).build();
+            //faceunity.FU_ADM_FLAG_EXTERNAL_OES_TEXTURE == 1
+            mFURenderer = new FURenderer.Builder(this).inputTextureType(1).build();
 
             mFaceunityControlView.setOnFaceUnityControlListener(mFURenderer);
 
