@@ -34,11 +34,13 @@ import com.qiniu.pili.droid.streaming.StreamingState;
 import com.qiniu.pili.droid.streaming.SurfaceTextureCallback;
 import com.qiniu.pili.droid.streaming.WatermarkSetting;
 import com.qiniu.pili.droid.streaming.demo.R;
+import com.qiniu.pili.droid.streaming.demo.StreamingApplication;
 import com.qiniu.pili.droid.streaming.demo.plain.CameraConfig;
 import com.qiniu.pili.droid.streaming.demo.ui.CameraPreviewFrameView;
 import com.qiniu.pili.droid.streaming.demo.ui.RotateLayout;
 import com.qiniu.pili.droid.streaming.demo.utils.Cache;
 import com.qiniu.pili.droid.streaming.demo.utils.Config;
+import com.qiniu.pili.droid.streaming.demo.utils.PreferenceUtil;
 import com.qiniu.pili.droid.streaming.microphone.AudioMixer;
 import com.qiniu.pili.droid.streaming.microphone.OnAudioMixListener;
 
@@ -47,6 +49,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class AVStreamingActivity extends StreamingBaseActivity implements
         CameraPreviewFrameView.Listener {
@@ -93,8 +97,9 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
     private boolean mIsPictureStreaming = false;
 
     private FURenderer mFURenderer;
-
+    private byte[] cameraNV21, copyData;
     private BeautyControlView mFaceunityControlView;
+    private String isOpen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,9 +110,9 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
     protected void onResume() {
         super.onResume();
         mMediaStreamingManager.resume();
-
         if (mFaceunityControlView != null) {
             mFaceunityControlView.onResume();
+            mCameraPreviewFrameView.onResume();
         }
     }
 
@@ -115,9 +120,10 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
     protected void onPause() {
         super.onPause();
         normalPause();
-
         if (mFaceunityControlView != null) {
             mFaceunityControlView.onPause();
+            mCameraPreviewFrameView.onPause();
+            cameraNV21 = null;
         }
     }
 
@@ -163,17 +169,26 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         }
         mMediaStreamingManager.prepare(mCameraStreamingSetting, microphoneStreamingSetting, buildWatermarkSetting(), mProfile);
         mFaceunityControlView = (BeautyControlView) findViewById(R.id.faceunity_control);
+        isOpen = PreferenceUtil.getString(StreamingApplication.getInstance(), PreferenceUtil.KEY_FACEUNITY_ISON);
+
         if (mCameraConfig.mIsCustomFaceBeauty) {
             //faceunity.FU_ADM_FLAG_EXTERNAL_OES_TEXTURE == 1
-            mFURenderer = new FURenderer.Builder(this).inputTextureType(1).build();
+            if (isOpen.equals("true")) {
+                mFURenderer = new FURenderer.Builder(this).inputTextureType(1).build();
+                mFaceunityControlView.setOnFaceUnityControlListener(mFURenderer);
+            } else {
+                mFaceunityControlView.setVisibility(View.GONE);
+            }
 
-            mFaceunityControlView.setOnFaceUnityControlListener(mFURenderer);
 
             mMediaStreamingManager.setSurfaceTextureCallback(new SurfaceTextureCallback() {
 
                 @Override
                 public void onSurfaceCreated() {
-                    mFURenderer.loadItems(mCurrentCamFacingIndex == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT.ordinal() ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK);
+                    if (mFURenderer != null) {
+                        mFURenderer.setCurrentCameraType(mCurrentCamFacingIndex == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT.ordinal() ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK);
+                        mFURenderer.loadItems();
+                    }
                 }
 
                 @Override
@@ -182,19 +197,26 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
 
                 @Override
                 public void onSurfaceDestroyed() {
-                    mFURenderer.destroyItems();
+                    if (mFURenderer != null)
+                        mFURenderer.onSurfaceDestroyed();
                 }
 
                 @Override
                 public int onDrawFrame(int texId, int width, int height, float[] floats) {
-                    return mFURenderer.onDrawFrame(texId, width, height, floats);
+                    if (cameraNV21 == null || cameraNV21.length <= 0 || mFURenderer == null)
+                        return texId;
+                    if (copyData == null)
+                        copyData = new byte[cameraNV21.length];
+                    System.arraycopy(cameraNV21, 0, copyData, 0, cameraNV21.length);
+                    return mFURenderer.onDrawFrameDoubleInput(copyData, texId, width, height);
                 }
             });
 
             mMediaStreamingManager.setStreamingPreviewCallback(new StreamingPreviewCallback() {
                 @Override
                 public boolean onPreviewFrame(byte[] data, int width, int height, int rotation, int fmt, long tsInNanoTime) {
-                    return mFURenderer.onPreviewFrame(data, width, height, rotation, fmt, tsInNanoTime);
+                    cameraNV21 = data;
+                    return true;
                 }
             });
         } else {
@@ -281,7 +303,8 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
                 mCameraPreviewFrameView.queueEvent(new Runnable() {
                     @Override
                     public void run() {
-                        mFURenderer.destroyItems();
+                        if (mFURenderer != null)
+                            mFURenderer.destroyItems();
                     }
                 });
             }
@@ -294,6 +317,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
             final String fileName = "PLStreaming_" + System.currentTimeMillis() + ".jpg";
             mMediaStreamingManager.captureFrame(100, 100, new FrameCapturedCallback() {
                 private Bitmap bitmap;
+
                 @Override
                 public void onFrameCaptured(Bitmap bmp) {
                     if (bmp == null) {
@@ -405,6 +429,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
 
     /**
      * Accept only 32 bit png (ARGB)
+     *
      * @return
      */
     private WatermarkSetting buildWatermarkSetting() {

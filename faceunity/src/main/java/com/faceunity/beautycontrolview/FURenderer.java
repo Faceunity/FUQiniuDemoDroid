@@ -48,10 +48,15 @@ public class FURenderer implements OnFaceUnityControlListener {
      * 目录effects下是我们打包签名好的道具
      */
     public static final String BUNDLE_v3 = "v3.bundle";
-    public static final String BUNDLE_anim_model = "anim_model.bundle";
     public static final String BUNDLE_face_beautification = "face_beautification.bundle";
-    public static final String BUNDLE_ardata_ex = "ardata_ex.bundle";
     public static final String BUNDLE_animoji_3d = "fxaa.bundle";
+
+    /**
+     * 单输入的类型
+     */
+    public static final int INPUT_NV21 = 0;
+    public static final int INPUT_I420 = 1;
+    public static final int INPUT_RGBA = 2;
 
     //美颜和滤镜的默认参数
     private boolean isNeedUpdateFaceBeauty = true;
@@ -97,6 +102,7 @@ public class FURenderer implements OnFaceUnityControlListener {
     private boolean mNeedReadBackImage = false; //将传入的byte[]图像复写为具有道具效果的
 
     private int mInputImageOrientation = 0;
+    private int mInputProp = 0;//输入道具的角度
     private int mCurrentCameraType = Camera.CameraInfo.CAMERA_FACING_FRONT;
 
     private float[] landmarksData = new float[150];
@@ -126,28 +132,6 @@ public class FURenderer implements OnFaceUnityControlListener {
             v3.read(v3Data);
             v3.close();
             faceunity.fuSetup(v3Data, null, authpack.A());
-
-            /**
-             * 加载优化表情跟踪功能所需要加载的动画数据文件anim_model.bundle；
-             * 启用该功能可以使表情系数及avatar驱动表情更加自然，减少异常表情、模型缺陷的出现。该功能对性能的影响较小。
-             * 启用该功能时，通过 fuLoadAnimModel 加载动画模型数据，加载成功即可启动。该功能会影响通过fuGetFaceInfo获取的expression表情系数，以及通过表情驱动的avatar模型。
-             * 适用于使用Animoji和avatar功能的用户，如果不是，可不加载
-             */
-            InputStream animModel = context.getAssets().open(BUNDLE_anim_model);
-            byte[] animModelData = new byte[animModel.available()];
-            animModel.read(animModelData);
-            animModel.close();
-            faceunity.fuLoadAnimModel(animModelData);
-
-            /**
-             * 加载高精度模式的三维张量数据文件ardata_ex.bundle。
-             * 适用于换脸功能，如果没用该功能可不加载；如果使用了换脸功能，必须加载，否则会报错
-             */
-            InputStream ar = context.getAssets().open(BUNDLE_ardata_ex);
-            byte[] arDate = new byte[ar.available()];
-            ar.read(arDate);
-            ar.close();
-            faceunity.fuLoadExtendedARData(arDate);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -158,13 +142,6 @@ public class FURenderer implements OnFaceUnityControlListener {
      */
     public static String getVersion() {
         return faceunity.fuGetVersion();
-    }
-
-    /**
-     * 获取证书相关的权限码
-     */
-    public static int getModuleCode() {
-        return faceunity.fuGetModuleCode(0);
     }
 
     /**
@@ -205,11 +182,11 @@ public class FURenderer implements OnFaceUnityControlListener {
         faceunity.fuSetMaxFaces(mMaxFaces);//设置多脸，目前最多支持8人。
 
         if (isNeedFaceBeauty) {
-            mFuItemHandler.sendEmptyMessage(FUItemHandler.HANDLE_CREATE_BEAUTY_ITEM);
+            mFuItemHandler.sendEmptyMessage(ITEM_ARRAYS_FACE_BEAUTY_INDEX);
         }
 
         if (isNeedAnimoji3D) {
-            mFuItemHandler.sendEmptyMessage(FUItemHandler.HANDLE_CREATE_ANIMOJI3D_ITEM);
+            mFuItemHandler.sendEmptyMessage(ITEM_ARRAYS_EFFECT_ABIMOJI_3D);
         }
 
         //加载默认道具
@@ -220,14 +197,41 @@ public class FURenderer implements OnFaceUnityControlListener {
     }
 
     /**
-     * 单输入接口(fuRenderToNV21Image)
+     * 单输入接口texture接口
      *
-     * @param img NV21数据
+     * @param tex
      * @param w
      * @param h
      * @return
      */
-    public int onDrawFrame(byte[] img, int w, int h) {
+    public int onDrawFrameSingleInputTex(int tex, int w, int h) {
+        if (tex <= 0 || w <= 0 || h <= 0) {
+            Log.e(TAG, "onDrawFrame date null");
+            return tex;
+        }
+        prepareDrawFrame();
+
+        int flags = mInputImageFormat;
+        if (mCurrentCameraType != Camera.CameraInfo.CAMERA_FACING_FRONT)
+            flags |= FU_ADM_FLAG_FLIP_X;
+
+        if (mNeedBenchmark) mFuCallStartTime = System.nanoTime();
+
+        int fuTex = faceunity.fuRenderToTexture(tex, w, h, mFrameId++, mItemsArray, flags);
+        if (mNeedBenchmark) mOneHundredFrameFUTime += System.nanoTime() - mFuCallStartTime;
+        return fuTex;
+    }
+
+    /**
+     * 单输入接口buffer接口
+     *
+     * @param img
+     * @param w
+     * @param h
+     * @param type :输入的buffer类型
+     * @return
+     */
+    public int onDrawFrameSingleInput(byte[] img, int w, int h, int type) {
         if (img == null || w <= 0 || h <= 0) {
             Log.e(TAG, "onDrawFrame date null");
             return 0;
@@ -239,36 +243,62 @@ public class FURenderer implements OnFaceUnityControlListener {
             flags |= FU_ADM_FLAG_FLIP_X;
 
         if (mNeedBenchmark) mFuCallStartTime = System.nanoTime();
-        int fuTex = faceunity.fuRenderToNV21Image(img, w, h, mFrameId++, mItemsArray, flags);
+
+        int fuTex;
+        switch (type) {
+            case INPUT_I420:
+                fuTex = faceunity.fuRenderToI420Image(img, w, h, mFrameId++, mItemsArray, flags);
+                break;
+            case INPUT_RGBA:
+                fuTex = faceunity.fuRenderToRgbaImage(img, w, h, mFrameId++, mItemsArray, flags);
+                break;
+            default:
+                //默认NV21
+                fuTex = faceunity.fuRenderToNV21Image(img, w, h, mFrameId++, mItemsArray, flags);
+                break;
+        }
         if (mNeedBenchmark) mOneHundredFrameFUTime += System.nanoTime() - mFuCallStartTime;
         return fuTex;
     }
 
     /**
-     * 单输入接口(fuRenderToNV21Image)，自定义画面数据需要回写到的byte[]
+     * 单输入接口，自定义画面数据需要回写到的byte[]
      *
-     * @param img         NV21数据
+     * @param img
      * @param w
      * @param h
      * @param readBackImg 画面数据需要回写到的byte[]
      * @param readBackW
      * @param readBackH
+     * @param type        :输入的buffer类型
      * @return
      */
-    public int onDrawFrame(byte[] img, int w, int h, byte[] readBackImg, int readBackW, int readBackH) {
+    public int onDrawFrameSingleInput(byte[] img, int w, int h, byte[] readBackImg, int readBackW, int readBackH, int type) {
         if (img == null || w <= 0 || h <= 0 || readBackImg == null || readBackW <= 0 || readBackH <= 0) {
             Log.e(TAG, "onDrawFrame date null");
             return 0;
         }
         prepareDrawFrame();
-
         int flags = mInputImageFormat;
         if (mCurrentCameraType != Camera.CameraInfo.CAMERA_FACING_FRONT)
             flags |= FU_ADM_FLAG_FLIP_X;
-
         if (mNeedBenchmark) mFuCallStartTime = System.nanoTime();
-        int fuTex = faceunity.fuRenderToNV21Image(img, w, h, mFrameId++, mItemsArray, flags,
-                readBackW, readBackH, readBackImg);
+        int fuTex;
+        switch (type) {
+            case INPUT_I420:
+                fuTex = faceunity.fuRenderToI420Image(img, w, h, mFrameId++, mItemsArray, flags,
+                        readBackW, readBackH, readBackImg);
+                break;
+            case INPUT_RGBA:
+                fuTex = faceunity.fuRenderToRgbaImage(img, w, h, mFrameId++, mItemsArray, flags,
+                        readBackW, readBackH, readBackImg);
+                break;
+            default:
+                //默认NV21
+                fuTex = faceunity.fuRenderToNV21Image(img, w, h, mFrameId++, mItemsArray, flags,
+                        readBackW, readBackH, readBackImg);
+                break;
+        }
         if (mNeedBenchmark) mOneHundredFrameFUTime += System.nanoTime() - mFuCallStartTime;
         return fuTex;
     }
@@ -282,7 +312,7 @@ public class FURenderer implements OnFaceUnityControlListener {
      * @param h
      * @return
      */
-    public int onDrawFrame(byte[] img, int tex, int w, int h) {
+    public int onDrawFrameDoubleInput(byte[] img, int tex, int w, int h) {
         if (tex <= 0 || img == null || w <= 0 || h <= 0) {
             Log.e(TAG, "onDrawFrame date null");
             return 0;
@@ -311,7 +341,7 @@ public class FURenderer implements OnFaceUnityControlListener {
      * @param readBackH
      * @return
      */
-    public int onDrawFrame(byte[] img, int tex, int w, int h, byte[] readBackImg, int readBackW, int readBackH) {
+    public int onDrawFrameDoubleInput(byte[] img, int tex, int w, int h, byte[] readBackImg, int readBackW, int readBackH) {
         if (tex <= 0 || img == null || w <= 0 || h <= 0 || readBackImg == null || readBackW <= 0 || readBackH <= 0) {
             Log.e(TAG, "onDrawFrame date null");
             return 0;
@@ -329,102 +359,12 @@ public class FURenderer implements OnFaceUnityControlListener {
         return fuTex;
     }
 
-    /**
-     * 单美颜接口(fuBeautifyImage)，将输入的图像数据，送入SDK流水线进行全图美化，并输出处理之后的图像数据。
-     * 该接口仅执行图像层面的美化处 理（包括滤镜、美肤），不执行人脸跟踪及所有人脸相关的操作（如美型）。
-     * 由于功能集中，相比 fuDualInputToTexture 接口执行美颜道具，该接口所需计算更少，执行效率更高。
-     *
-     * @param tex 纹理ID
-     * @param w
-     * @param h
-     * @return
-     */
-    public int onDrawFrame(int tex, int w, int h) {
-        if (tex <= 0 || w <= 0 || h <= 0) {
-            Log.e(TAG, "onDrawFrame date null");
-            return 0;
-        }
-        prepareDrawFrame();
-
-        int flags = mInputTextureType;
-
-        if (mNeedBenchmark) mFuCallStartTime = System.nanoTime();
-        int fuTex = faceunity.fuBeautifyImage(tex, flags, w, h, mFrameId++, mItemsArray);
-        if (mNeedBenchmark) mOneHundredFrameFUTime += System.nanoTime() - mFuCallStartTime;
-        return fuTex;
-    }
-
-    /**
-     * 使用 fuTrackFace + fuAvatarToTexture 的方法组合绘制画面，该组合没有camera画面绘制，适用于animoji等相关道具的绘制。
-     * fuTrackFace 获取识别到的人脸信息
-     * fuAvatarToTexture 依据人脸信息绘制道具
-     *
-     * @param img 数据格式可由 flags 定义
-     * @param w
-     * @param h
-     * @return
-     */
-    public int onDrawFrameAvatar(byte[] img, int w, int h) {
-        if (img == null || w <= 0 || h <= 0) {
-            Log.e(TAG, "onDrawFrameAvatar date null");
-            return 0;
-        }
-        prepareDrawFrame();
-
-        int flags = mInputImageFormat;
-        if (mCurrentCameraType != Camera.CameraInfo.CAMERA_FACING_FRONT)
-            flags |= FU_ADM_FLAG_FLIP_X;
-
-        if (mNeedBenchmark) mFuCallStartTime = System.nanoTime();
-        faceunity.fuTrackFace(img, flags, w, h);
-
-        /**
-         * landmarks 2D人脸特征点，返回值为75个二维坐标，长度75*2
-         */
-        Arrays.fill(landmarksData, 0.0f);
-        faceunity.fuGetFaceInfo(0, "landmarks", landmarksData);
-
-        /**
-         *rotation 人脸三维旋转，返回值为旋转四元数，长度4
-         */
-        Arrays.fill(rotationData, 0.0f);
-        faceunity.fuGetFaceInfo(0, "rotation", rotationData);
-        /**
-         * expression  表情系数，长度46
-         */
-        Arrays.fill(expressionData, 0.0f);
-        faceunity.fuGetFaceInfo(0, "expression", expressionData);
-
-        /**
-         * pupil pos 人脸朝向，0-3分别对应手机四种朝向，长度1
-         */
-        Arrays.fill(pupilPosData, 0.0f);
-        faceunity.fuGetFaceInfo(0, "pupil_pos", pupilPosData);
-
-        /**
-         * rotation mode
-         */
-        Arrays.fill(rotationModeData, 0.0f);
-        faceunity.fuGetFaceInfo(0, "rotation_mode", rotationModeData);
-
-        int isTracking = faceunity.fuIsTracking();
-
-        if (isTracking <= 0) {
-            rotationData[3] = 1.0f;
-            rotationModeData[0] = (360 - mInputImageOrientation) / 90;
-        }
-
-        int tex = faceunity.fuAvatarToTexture(pupilPosData, expressionData, rotationData, rotationModeData,
-                0, w, h, mFrameId++, mItemsArray, isTracking);
-        if (mNeedBenchmark) mOneHundredFrameFUTime += System.nanoTime() - mFuCallStartTime;
-        return tex;
-    }
 
     /**
      * 销毁faceunity相关的资源
      */
     public void onSurfaceDestroyed() {
-        mFuItemHandler.removeMessages(FUItemHandler.HANDLE_CREATE_ITEM);
+        mFuItemHandler.removeMessages(ITEM_ARRAYS_EFFECT);
 
         mFrameId = 0;
         isNeedUpdateFaceBeauty = true;
@@ -546,6 +486,16 @@ public class FURenderer implements OnFaceUnityControlListener {
      * @param inputImageOrientation
      */
     public void onCameraChange(final int currentCameraType, final int inputImageOrientation) {
+        this.onCameraChange(currentCameraType, inputImageOrientation, inputImageOrientation);
+    }
+
+    /**
+     * camera切换时需要调用
+     *
+     * @param currentCameraType     前后置摄像头ID
+     * @param inputImageOrientation
+     */
+    public void onCameraChange(final int currentCameraType, final int inputImageOrientation, final int inputProp) {
         if (mCurrentCameraType == currentCameraType && mInputImageOrientation == inputImageOrientation)
             return;
         queueEvent(new Runnable() {
@@ -553,12 +503,20 @@ public class FURenderer implements OnFaceUnityControlListener {
             public void run() {
                 mCurrentCameraType = currentCameraType;
                 mInputImageOrientation = inputImageOrientation;
+                mInputProp = inputProp;
                 faceunity.fuOnCameraChange();
                 updateEffectItemParams(mItemsArray[ITEM_ARRAYS_EFFECT]);
                 faceunity.fuSetDefaultOrientation((360 - mInputImageOrientation) / 90);
                 changeInputType();
             }
         });
+    }
+
+    /**
+     * @param mCurrentCameraType 前后置摄像头ID
+     */
+    public void setCurrentCameraType(int mCurrentCameraType) {
+        this.mCurrentCameraType = mCurrentCameraType;
     }
 
     /**
@@ -662,14 +620,14 @@ public class FURenderer implements OnFaceUnityControlListener {
     @Override
     public void onEnlargeEyeSelected(float progress) {
         isNeedUpdateFaceBeauty = true;
-            mFaceBeautyEnlargeEye = progress;
+        mFaceBeautyEnlargeEye = progress;
     }
 
 
     @Override
     public void onCheekThinSelected(float progress) {
         isNeedUpdateFaceBeauty = true;
-            mFaceBeautyCheekThin = progress;
+        mFaceBeautyCheekThin = progress;
     }
 
     @Override
@@ -761,15 +719,11 @@ public class FURenderer implements OnFaceUnityControlListener {
 
     public void createItem(Effect item) {
         if (item == null) return;
-        mFuItemHandler.removeMessages(FUItemHandler.HANDLE_CREATE_ITEM);
-        mFuItemHandler.sendMessage(Message.obtain(mFuItemHandler, FUItemHandler.HANDLE_CREATE_ITEM, item));
+        mFuItemHandler.removeMessages(ITEM_ARRAYS_EFFECT);
+        mFuItemHandler.sendMessage(Message.obtain(mFuItemHandler, ITEM_ARRAYS_EFFECT, item));
     }
 
     class FUItemHandler extends Handler {
-
-        static final int HANDLE_CREATE_ITEM = 1;
-        static final int HANDLE_CREATE_BEAUTY_ITEM = 2;
-        static final int HANDLE_CREATE_ANIMOJI3D_ITEM = 3;
 
         FUItemHandler(Looper looper) {
             super(looper);
@@ -780,7 +734,7 @@ public class FURenderer implements OnFaceUnityControlListener {
             super.handleMessage(msg);
             switch (msg.what) {
                 //加载道具
-                case HANDLE_CREATE_ITEM:
+                case ITEM_ARRAYS_EFFECT:
                     final Effect effect = (Effect) msg.obj;
                     final int newEffectItem = loadItem(effect);
                     queueEvent(new Runnable() {
@@ -795,7 +749,7 @@ public class FURenderer implements OnFaceUnityControlListener {
                     });
                     break;
                 //加载美颜bundle
-                case HANDLE_CREATE_BEAUTY_ITEM:
+                case ITEM_ARRAYS_FACE_BEAUTY_INDEX:
                     try {
                         InputStream beauty = mContext.getAssets().open(BUNDLE_face_beautification);
                         byte[] beautyData = new byte[beauty.available()];
@@ -809,7 +763,7 @@ public class FURenderer implements OnFaceUnityControlListener {
                     }
                     break;
                 //加载animoji道具3D抗锯齿bundle
-                case HANDLE_CREATE_ANIMOJI3D_ITEM:
+                case ITEM_ARRAYS_EFFECT_ABIMOJI_3D:
                     try {
                         InputStream animoji3D = mContext.getAssets().open(BUNDLE_animoji_3d);
                         byte[] animoji3DData = new byte[animoji3D.available()];
@@ -862,7 +816,7 @@ public class FURenderer implements OnFaceUnityControlListener {
                 faceunity.fuItemSetParam(itemHandle, "isAndroid", 1.0);
 
                 //rotationAngle 参数是用于旋转普通道具
-                faceunity.fuItemSetParam(itemHandle, "rotationAngle", 360 - mInputImageOrientation);
+                faceunity.fuItemSetParam(itemHandle, "rotationAngle", 360 - mInputProp);
 
                 //这两句代码用于识别人脸默认方向的修改，主要针对animoji道具的切换摄像头倒置问题
                 faceunity.fuItemSetParam(itemHandle, "camera_change", 1.0);
@@ -893,6 +847,7 @@ public class FURenderer implements OnFaceUnityControlListener {
         private boolean needReadBackImage = false;
         private int inputImageFormat = 0;
         private int inputImageRotation = 90;
+        private int inputProp = 90;
         private boolean isNeedAnimoji3D = false;
         private boolean isNeedFaceBeauty = true;
 
@@ -940,6 +895,11 @@ public class FURenderer implements OnFaceUnityControlListener {
             return this;
         }
 
+        public Builder inputProp(int inputProp) {
+            this.inputProp = inputProp;
+            return this;
+        }
+
         public Builder setNeedAnimoji3D(boolean needAnimoji3D) {
             this.isNeedAnimoji3D = needAnimoji3D;
             return this;
@@ -977,6 +937,7 @@ public class FURenderer implements OnFaceUnityControlListener {
             fuRenderer.mNeedReadBackImage = needReadBackImage;
             fuRenderer.mInputImageFormat = inputImageFormat;
             fuRenderer.mInputImageOrientation = inputImageRotation;
+            fuRenderer.mInputProp = inputProp;
             fuRenderer.mDefaultEffect = defaultEffect;
             fuRenderer.isNeedAnimoji3D = isNeedAnimoji3D;
             fuRenderer.isNeedFaceBeauty = isNeedFaceBeauty;
@@ -990,18 +951,13 @@ public class FURenderer implements OnFaceUnityControlListener {
 
     }
 
+
+    //--------------------------------------FBO绘制----------------------------------------
     private static boolean isInit;
-
     private FullFrameRect mFullScreenFUDisplay;
-
-    private volatile int cameraWidth, cameraHeight;
-
-    private volatile byte[] mCameraNV21Byte;
-    private byte[] fuImgNV21Bytes;
-
     private boolean isActive;
 
-    public void loadItems(int currentCameraType) {
+    public void loadItems() {
         if (!isInit) {
             isInit = true;
             initFURenderer(mContext);
@@ -1009,17 +965,8 @@ public class FURenderer implements OnFaceUnityControlListener {
 
         mFullScreenFUDisplay = new FullFrameRect(new Texture2dProgram(
                 Texture2dProgram.ProgramType.TEXTURE_2D));
-
         onSurfaceCreated();
-
-        cameraWidth = 0;
-        cameraHeight = 0;
-
-        mCameraNV21Byte = null;
-
         isActive = true;
-
-        mCurrentCameraType = currentCameraType;
     }
 
     public void destroyItems() {
@@ -1030,53 +977,33 @@ public class FURenderer implements OnFaceUnityControlListener {
         deleteFBO();
     }
 
-    public int onDrawFrame(int texId, int texWidth, int texHeight, float[] transformMatrix) {
+    public int onDrawFrameFBODoubleInput(byte[] img, int tex, int texWidth,
+                                         int texHeight) {
         if (!isActive) {
-            return texId;
+            return tex;
         }
-
-        byte[] mCameraNV21Byte = this.mCameraNV21Byte;
-        if (mCameraNV21Byte == null || mCameraNV21Byte.length == 0 || mCameraNV21Byte.length != texWidth * texHeight * 3 / 2) {
+        if (img == null || img.length == 0 || img.length != texWidth * texHeight * 3 / 2) {
             Log.e(TAG, "camera nv21 bytes null");
-            return texId;
+            return tex;
         }
-
-        createFBO(texWidth, texHeight);
-
         int[] originalViewPort = new int[4];
         GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, originalViewPort, 0);
+        int[] fbo = new int[1];
+        GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER, fbo, 0);
+
+        createFBO(texWidth, texHeight);
+        int fuTex = onDrawFrameDoubleInput(img, tex, texWidth, texHeight);
 
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId[0]);
-
-        byte[] bytes = new byte[texWidth * texHeight * 3 / 2];
-        int fuTex = onDrawFrame(mCameraNV21Byte, texId, texWidth, texHeight, bytes, texWidth, texHeight);
-        this.fuImgNV21Bytes = bytes;
-
-        GLES20.glViewport(0,0, texWidth, texHeight);
+        GLES20.glViewport(0, 0, texWidth, texHeight);
         float[] matrix = new float[16];
         Matrix.setIdentityM(matrix, 0);
         mFullScreenFUDisplay.drawFrame(fuTex, matrix);
 
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fbo[0]);
         GLES20.glViewport(originalViewPort[0], originalViewPort[1], originalViewPort[2], originalViewPort[3]);
 
         return fboTex[0];
-    }
-
-    public boolean onPreviewFrame(byte[] data, int width, int height, int rotation, int fmt, long timestampNs) {
-        byte[] bytes = new byte[data.length];
-        System.arraycopy(data, 0, bytes, 0, data.length);
-        mCameraNV21Byte = bytes;
-
-        byte[] fuImgNV21Bytes = this.fuImgNV21Bytes;
-        if (fuImgNV21Bytes != null && fuImgNV21Bytes.length == data.length) {
-            System.arraycopy(fuImgNV21Bytes, 0, data, 0, data.length);
-        }
-
-        mInputImageOrientation = rotation;
-
-        return true;
     }
 
     private int fboId[];
@@ -1084,6 +1011,7 @@ public class FURenderer implements OnFaceUnityControlListener {
     private int renderBufferId[];
 
     private int fboWidth, fboHeight;
+    private int num = 2;
 
     private void createFBO(int width, int height) {
         if (fboTex != null && (fboWidth != width || fboHeight != height)) {
@@ -1094,16 +1022,16 @@ public class FURenderer implements OnFaceUnityControlListener {
         fboHeight = height;
 
         if (fboTex == null) {
-            fboId = new int[2];
-            fboTex = new int[2];
-            renderBufferId = new int[2];
+            fboId = new int[num];
+            fboTex = new int[num];
+            renderBufferId = new int[num];
 
 //generate fbo id
-            GLES20.glGenFramebuffers(2, fboId, 0);
+            GLES20.glGenFramebuffers(num, fboId, 0);
 //generate texture
-            GLES20.glGenTextures(2, fboTex, 0);
+            GLES20.glGenTextures(num, fboTex, 0);
 //generate render buffer
-            GLES20.glGenRenderbuffers(2, renderBufferId, 0);
+            GLES20.glGenRenderbuffers(num, renderBufferId, 0);
 
             for (int i = 0; i < fboId.length; i++) {
 //Bind Frame buffer
@@ -1135,9 +1063,9 @@ public class FURenderer implements OnFaceUnityControlListener {
         if (fboId == null || fboTex == null || renderBufferId == null) {
             return;
         }
-        GLES20.glDeleteFramebuffers(2, fboId, 0);
-        GLES20.glDeleteTextures(2, fboTex, 0);
-        GLES20.glDeleteRenderbuffers(2, renderBufferId, 0);
+        GLES20.glDeleteFramebuffers(num, fboId, 0);
+        GLES20.glDeleteTextures(num, fboTex, 0);
+        GLES20.glDeleteRenderbuffers(num, renderBufferId, 0);
         fboId = null;
         fboTex = null;
         renderBufferId = null;
