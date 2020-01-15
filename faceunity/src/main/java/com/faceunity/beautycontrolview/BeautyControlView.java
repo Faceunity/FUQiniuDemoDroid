@@ -80,7 +80,6 @@ public class BeautyControlView extends FrameLayout {
     private static final String FaceBeautyFilterLevel = "FaceBeautyFilterLevel_";
     private Map<String, Float> mFilterLevelIntegerMap = new HashMap<>();
 
-    private float mFaceBeautyALLBlurLevel = 1.0f;//精准磨皮
     private float mFaceBeautyType = 0.0f;//美肤类型
     private float mFaceBeautyBlurLevel = 0.7f;//磨皮
     private float mFaceBeautyColorLevel = 0.5f;//美白
@@ -166,12 +165,7 @@ public class BeautyControlView extends FrameLayout {
             public void onCheckedChanged(BeautyBoxGroup group, int checkedId, boolean isChecked) {
                 mFaceShapeRadioGroup.setVisibility(GONE);
                 mBeautySeekBarLayout.setVisibility(GONE);
-                if (checkedId == R.id.beauty_all_blur_box) {
-                    mFaceBeautyALLBlurLevel = isChecked ? 1 : 0;
-                    setDescriptionShowStr(mFaceBeautyALLBlurLevel == 0 ? "精准美肤 关闭" : "精准美肤 开启");
-                    onChangeFaceBeautyLevel(checkedId, mFaceBeautyALLBlurLevel);
-
-                } else if (checkedId == R.id.beauty_type_box) {
+                if (checkedId == R.id.beauty_type_box) {
                     mFaceBeautyType = isChecked ? 1 : 0;
                     setDescriptionShowStr(mFaceBeautyType == 0 ? "当前为 清晰磨皮 模式" : "当前为 朦胧磨皮 模式");
                     onChangeFaceBeautyLevel(checkedId, mFaceBeautyType);
@@ -238,7 +232,6 @@ public class BeautyControlView extends FrameLayout {
     }
 
     private void updateViewSkinBeauty() {
-        ((BeautyBox) findViewById(R.id.beauty_all_blur_box)).setChecked(mFaceBeautyALLBlurLevel == 1);
         ((BeautyBox) findViewById(R.id.beauty_type_box)).setChecked(mFaceBeautyType == 1);
         ((BeautyBox) findViewById(R.id.beauty_blur_box)).setChecked(mFaceBeautyBlurLevel < FINAL_CHANE);
         ((BeautyBox) findViewById(R.id.beauty_color_box)).setChecked(mFaceBeautyColorLevel < FINAL_CHANE);
@@ -499,10 +492,7 @@ public class BeautyControlView extends FrameLayout {
 
     private void onChangeFaceBeautyLevel(int viewId, float value) {
         boolean isClose = value >= 1000;
-        if (viewId == R.id.beauty_all_blur_box) {
-            if (mOnFaceUnityControlListener != null)
-                mOnFaceUnityControlListener.onALLBlurLevelSelected(value);
-        } else if (viewId == R.id.beauty_type_box) {
+        if (viewId == R.id.beauty_type_box) {
             if (mOnFaceUnityControlListener != null)
                 mOnFaceUnityControlListener.onBeautySkinTypeSelected(value);
         } else if (viewId == R.id.beauty_blur_box) {

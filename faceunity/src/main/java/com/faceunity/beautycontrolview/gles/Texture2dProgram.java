@@ -50,7 +50,7 @@ public class Texture2dProgram {
                     "varying vec2 vTextureCoord;\n" +
                     "uniform sampler2D sTexture;\n" +
                     "void main() {\n" +
-                    "    gl_FragColor = vec4(texture2D(sTexture, vTextureCoord).rgb, 1.0);\n" +
+                    "    gl_FragColor = texture2D(sTexture, vTextureCoord);\n" +
                     "}\n";
 
     // Simple fragment shader for use with external 2D textures (e.g. what we get from

@@ -14,8 +14,8 @@ import android.widget.Toast;
 import com.qiniu.pili.droid.streaming.ScreenSetting;
 import com.qiniu.pili.droid.streaming.ScreenStreamingManager;
 import com.qiniu.pili.droid.streaming.StreamingState;
-import com.qiniu.pili.droid.streaming.demo.utils.Config;
 import com.qiniu.pili.droid.streaming.demo.R;
+import com.qiniu.pili.droid.streaming.demo.utils.Config;
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class ScreenStreamingActivity extends StreamingBaseActivity {

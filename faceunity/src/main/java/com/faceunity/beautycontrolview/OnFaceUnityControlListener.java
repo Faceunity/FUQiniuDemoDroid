@@ -37,13 +37,6 @@ public interface OnFaceUnityControlListener {
     void onFilterSelected(Filter filterName);
 
     /**
-     * 精准磨皮
-     *
-     * @param isAll 是否开启精准磨皮（0关闭 1开启）
-     */
-    void onALLBlurLevelSelected(float isAll);
-
-    /**
      * 美肤类型
      *
      * @param skinType 0:清晰美肤 1:朦胧美肤

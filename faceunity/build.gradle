@@ -7,8 +7,9 @@ android {
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 28
-        versionCode 1
-        versionName "6.0.0_dev_tf_phy-3938b3e9-16d49df-47a70ba"
+        versionCode 64
+        // 6.4.0_tf_phy-cf6b7963-165b1e1-085c8ad
+        versionName "6.4.0"
     }
 
     buildTypes {

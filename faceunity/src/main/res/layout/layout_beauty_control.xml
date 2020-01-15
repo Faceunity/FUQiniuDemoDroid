@@ -145,15 +145,6 @@
                 android:orientation="horizontal">
 
                 <com.faceunity.beautycontrolview.BeautyBox
-                    android:id="@+id/beauty_all_blur_box"
-                    android:layout_width="@dimen/x160"
-                    android:layout_height="wrap_content"
-                    app:checked_model="checkbox"
-                    app:drawable_checked="@drawable/beauty_skin_control_all_blur_checked"
-                    app:drawable_normal="@drawable/beauty_skin_control_all_blur_normal"
-                    app:text_normal="精准美肤"/>
-
-                <com.faceunity.beautycontrolview.BeautyBox
                     android:id="@+id/beauty_type_box"
                     android:layout_width="@dimen/x160"
                     android:layout_height="wrap_content"

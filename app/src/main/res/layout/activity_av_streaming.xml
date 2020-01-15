@@ -76,6 +76,14 @@
             android:text="Picture\nStreaming"
             android:textColor="@color/pldroid_streaming_white" />
 
+        <Button
+            android:id="@+id/add_overlay_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add\nOverlay"
+            android:textColor="@color/pldroid_streaming_white"
+            android:visibility="gone" />
+
     </LinearLayout>
 
     <LinearLayout
@@ -143,7 +151,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="100dp"
+        android:layout_marginBottom="60dp"
         android:max="100"
         android:progress="100" />
 

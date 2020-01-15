@@ -4,9 +4,9 @@ import android.content.Context;
 import android.opengl.GLES20;
 import android.util.Log;
 
-import com.qiniu.pili.droid.streaming.demo.utils.Config;
 import com.qiniu.pili.droid.streaming.demo.R;
 import com.qiniu.pili.droid.streaming.demo.filter.CameraFilterBeauty;
+import com.qiniu.pili.droid.streaming.demo.utils.Config;
 
 public class FBO {
     private static final String TAG = "FBO";

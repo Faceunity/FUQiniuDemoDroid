@@ -2,8 +2,6 @@ package com.faceunity.beautycontrolview;
 
 import android.content.Context;
 import android.hardware.Camera;
-import android.opengl.GLES20;
-import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -13,8 +11,6 @@ import android.util.Log;
 
 import com.faceunity.beautycontrolview.entity.Effect;
 import com.faceunity.beautycontrolview.entity.Filter;
-import com.faceunity.beautycontrolview.gles.FullFrameRect;
-import com.faceunity.beautycontrolview.gles.Texture2dProgram;
 import com.faceunity.wrapper.faceunity;
 
 import java.io.IOException;
@@ -35,6 +31,7 @@ import static com.faceunity.wrapper.faceunity.FU_ADM_FLAG_FLIP_X;
  */
 public class FURenderer implements OnFaceUnityControlListener {
     private static final String TAG = FURenderer.class.getSimpleName();
+    public static final int oes = faceunity.FU_ADM_FLAG_EXTERNAL_OES_TEXTURE;
 
     private Context mContext;
 
@@ -63,7 +60,6 @@ public class FURenderer implements OnFaceUnityControlListener {
     private float mFaceBeautyFilterLevel = 1.0f;//滤镜强度
     private Filter mFilterName = FilterEnum.ziran.filter();
 
-    private float mFaceBeautyALLBlurLevel = 1.0f;//精准磨皮
     private float mFaceBeautyType = 0.0f;//美肤类型
     private float mFaceBeautyBlurLevel = 0.7f;//磨皮
     private float mFaceBeautyColorLevel = 0.5f;//美白
@@ -101,15 +97,9 @@ public class FURenderer implements OnFaceUnityControlListener {
     private int mInputImageFormat = 0;
     private boolean mNeedReadBackImage = false; //将传入的byte[]图像复写为具有道具效果的
 
-    private int mInputImageOrientation = 0;
+    private int mInputImageOrientation = 270;
     private int mInputProp = 0;//输入道具的角度
     private int mCurrentCameraType = Camera.CameraInfo.CAMERA_FACING_FRONT;
-
-    private float[] landmarksData = new float[150];
-    private float[] expressionData = new float[46];
-    private float[] rotationData = new float[4];
-    private float[] pupilPosData = new float[2];
-    private float[] rotationModeData = new float[1];
 
     private ArrayList<Runnable> mEventQueue = new ArrayList<>();
 
@@ -312,6 +302,23 @@ public class FURenderer implements OnFaceUnityControlListener {
      * @param h
      * @return
      */
+    public int onDrawFrameDoubleI420Input(byte[] img, int tex, int w, int h) {
+        if (tex <= 0 || img == null || w <= 0 || h <= 0) {
+            Log.e(TAG, "onDrawFrame date null");
+            return 0;
+        }
+        prepareDrawFrame();
+
+        int flags = mInputTextureType | mInputImageFormat;
+        if (mCurrentCameraType != Camera.CameraInfo.CAMERA_FACING_FRONT)
+            flags |= FU_ADM_FLAG_FLIP_X;
+
+        if (mNeedBenchmark) mFuCallStartTime = System.nanoTime();
+        int fuTex = faceunity.fuDualInputToTexture(img, tex, flags, w, h, mFrameId++, mItemsArray);
+        if (mNeedBenchmark) mOneHundredFrameFUTime += System.nanoTime() - mFuCallStartTime;
+        return fuTex;
+    }
+
     public int onDrawFrameDoubleInput(byte[] img, int tex, int w, int h) {
         if (tex <= 0 || img == null || w <= 0 || h <= 0) {
             Log.e(TAG, "onDrawFrame date null");
@@ -364,14 +371,16 @@ public class FURenderer implements OnFaceUnityControlListener {
      * 销毁faceunity相关的资源
      */
     public void onSurfaceDestroyed() {
-        mFuItemHandler.removeMessages(ITEM_ARRAYS_EFFECT);
+        Log.e(TAG, "onSurfaceDestroyed");
+        mFuItemHandler.removeCallbacksAndMessages(null);
 
         mFrameId = 0;
         isNeedUpdateFaceBeauty = true;
+        mEventQueue.clear();
         Arrays.fill(mItemsArray, 0);
         faceunity.fuDestroyAllItems();
         faceunity.fuOnDeviceLost();
-        mEventQueue.clear();
+        faceunity.fuDone();
         if (mIsCreateEGLContext) faceunity.fuReleaseEGLContext();
     }
 
@@ -391,7 +400,9 @@ public class FURenderer implements OnFaceUnityControlListener {
         //获取faceunity错误信息，并调用回调接口
         int error = faceunity.fuGetSystemError();
         if (mOnSystemErrorListener != null && error != 0) {
-            mOnSystemErrorListener.onSystemError(error == 0 ? "" : faceunity.fuGetSystemErrorString(error));
+            String errorStr = faceunity.fuGetSystemErrorString(error);
+            Log.e(TAG, "onSystemError: " + errorStr);
+            mOnSystemErrorListener.onSystemError(errorStr);
         }
 
         //获取是否正在表情校准，并调用回调接口
@@ -408,8 +419,6 @@ public class FURenderer implements OnFaceUnityControlListener {
             //filter_name 滤镜
             faceunity.fuItemSetParam(mItemsArray[ITEM_ARRAYS_FACE_BEAUTY_INDEX], "filter_name", mFilterName.filterName());
 
-            //skin_detect 精准美肤 0:关闭 1:开启 SDK默认为 0
-            faceunity.fuItemSetParam(mItemsArray[ITEM_ARRAYS_FACE_BEAUTY_INDEX], "skin_detect", mFaceBeautyALLBlurLevel);
             //heavy_blur 美肤类型 0:清晰美肤 1:朦胧美肤 SDK默认为 0
             faceunity.fuItemSetParam(mItemsArray[ITEM_ARRAYS_FACE_BEAUTY_INDEX], "heavy_blur", mFaceBeautyType);
             //blur_level 磨皮 范围0~6 SDK默认为 6
@@ -512,6 +521,18 @@ public class FURenderer implements OnFaceUnityControlListener {
         });
     }
 
+    public void setInputImageOrientation(int inputImageOrientation) {
+        if (mInputImageOrientation != inputImageOrientation) {
+            mInputImageOrientation = inputImageOrientation;
+            queueEvent(new Runnable() {
+                @Override
+                public void run() {
+                    faceunity.fuSetDefaultOrientation((360 - mInputImageOrientation) / 90);
+                }
+            });
+        }
+    }
+
     /**
      * @param mCurrentCameraType 前后置摄像头ID
      */
@@ -566,12 +587,6 @@ public class FURenderer implements OnFaceUnityControlListener {
     public void onFilterSelected(Filter filterName) {
         isNeedUpdateFaceBeauty = true;
         this.mFilterName = filterName;
-    }
-
-    @Override
-    public void onALLBlurLevelSelected(float isAll) {
-        isNeedUpdateFaceBeauty = true;
-        mFaceBeautyALLBlurLevel = isAll;
     }
 
     @Override
@@ -690,7 +705,7 @@ public class FURenderer implements OnFaceUnityControlListener {
     private int mCurrentFrameCnt = 0;
     private long mLastOneHundredFrameTimeStamp = 0;
     private long mOneHundredFrameFUTime = 0;
-    private boolean mNeedBenchmark = true;
+    private boolean mNeedBenchmark = false;
     private long mFuCallStartTime = 0;
 
     private OnFUDebugListener mOnFUDebugListener;
@@ -951,11 +966,7 @@ public class FURenderer implements OnFaceUnityControlListener {
 
     }
 
-
-    //--------------------------------------FBO绘制----------------------------------------
     private static boolean isInit;
-    private FullFrameRect mFullScreenFUDisplay;
-    private boolean isActive;
 
     public void loadItems() {
         if (!isInit) {
@@ -963,111 +974,11 @@ public class FURenderer implements OnFaceUnityControlListener {
             initFURenderer(mContext);
         }
 
-        mFullScreenFUDisplay = new FullFrameRect(new Texture2dProgram(
-                Texture2dProgram.ProgramType.TEXTURE_2D));
         onSurfaceCreated();
-        isActive = true;
     }
 
     public void destroyItems() {
-        isActive = false;
-
         onSurfaceDestroyed();
-
-        deleteFBO();
     }
 
-    public int onDrawFrameFBODoubleInput(byte[] img, int tex, int texWidth,
-                                         int texHeight) {
-        if (!isActive) {
-            return tex;
-        }
-        if (img == null || img.length == 0 || img.length != texWidth * texHeight * 3 / 2) {
-            Log.e(TAG, "camera nv21 bytes null");
-            return tex;
-        }
-        int[] originalViewPort = new int[4];
-        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, originalViewPort, 0);
-        int[] fbo = new int[1];
-        GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER, fbo, 0);
-
-        createFBO(texWidth, texHeight);
-        int fuTex = onDrawFrameDoubleInput(img, tex, texWidth, texHeight);
-
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId[0]);
-        GLES20.glViewport(0, 0, texWidth, texHeight);
-        float[] matrix = new float[16];
-        Matrix.setIdentityM(matrix, 0);
-        mFullScreenFUDisplay.drawFrame(fuTex, matrix);
-
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fbo[0]);
-        GLES20.glViewport(originalViewPort[0], originalViewPort[1], originalViewPort[2], originalViewPort[3]);
-
-        return fboTex[0];
-    }
-
-    private int fboId[];
-    private int fboTex[];
-    private int renderBufferId[];
-
-    private int fboWidth, fboHeight;
-    private int num = 2;
-
-    private void createFBO(int width, int height) {
-        if (fboTex != null && (fboWidth != width || fboHeight != height)) {
-            deleteFBO();
-        }
-
-        fboWidth = width;
-        fboHeight = height;
-
-        if (fboTex == null) {
-            fboId = new int[num];
-            fboTex = new int[num];
-            renderBufferId = new int[num];
-
-//generate fbo id
-            GLES20.glGenFramebuffers(num, fboId, 0);
-//generate texture
-            GLES20.glGenTextures(num, fboTex, 0);
-//generate render buffer
-            GLES20.glGenRenderbuffers(num, renderBufferId, 0);
-
-            for (int i = 0; i < fboId.length; i++) {
-//Bind Frame buffer
-                GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId[i]);
-//Bind texture
-                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, fboTex[i]);
-//Define texture parameters
-                GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-//Bind render buffer and define buffer dimension
-                GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, renderBufferId[i]);
-                GLES20.glRenderbufferStorage(GLES20.GL_RENDERBUFFER, GLES20.GL_DEPTH_COMPONENT16, width, height);
-//Attach texture FBO color attachment
-                GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, fboTex[i], 0);
-//Attach render buffer to depth attachment
-                GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_DEPTH_ATTACHMENT, GLES20.GL_RENDERBUFFER, renderBufferId[i]);
-//we are done, reset
-                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-                GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, 0);
-                GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-            }
-        }
-    }
-
-    private void deleteFBO() {
-        if (fboId == null || fboTex == null || renderBufferId == null) {
-            return;
-        }
-        GLES20.glDeleteFramebuffers(num, fboId, 0);
-        GLES20.glDeleteTextures(num, fboTex, 0);
-        GLES20.glDeleteRenderbuffers(num, renderBufferId, 0);
-        fboId = null;
-        fboTex = null;
-        renderBufferId = null;
-    }
 }

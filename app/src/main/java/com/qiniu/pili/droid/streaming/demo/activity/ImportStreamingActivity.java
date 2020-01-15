@@ -8,10 +8,10 @@ import android.view.WindowManager;
 
 import com.qiniu.pili.droid.streaming.AVCodecType;
 import com.qiniu.pili.droid.streaming.StreamingManager;
-import com.qiniu.pili.droid.streaming.demo.utils.Config;
 import com.qiniu.pili.droid.streaming.demo.R;
 import com.qiniu.pili.droid.streaming.demo.core.ExtAudioCapture;
 import com.qiniu.pili.droid.streaming.demo.core.ExtVideoCapture;
+import com.qiniu.pili.droid.streaming.demo.utils.Config;
 
 public class ImportStreamingActivity extends StreamingBaseActivity {
     private static final String TAG = "ImportStreamingActivity";

@@ -4,17 +4,19 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.media.AudioFormat;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
@@ -24,6 +26,7 @@ import com.github.angads25.filepicker.controller.DialogSelectionListener;
 import com.github.angads25.filepicker.model.DialogConfigs;
 import com.github.angads25.filepicker.model.DialogProperties;
 import com.github.angads25.filepicker.view.FilePickerDialog;
+import com.qiniu.pili.droid.streaming.AVCodecType;
 import com.qiniu.pili.droid.streaming.CameraStreamingSetting;
 import com.qiniu.pili.droid.streaming.FrameCapturedCallback;
 import com.qiniu.pili.droid.streaming.MediaStreamingManager;
@@ -48,9 +51,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class AVStreamingActivity extends StreamingBaseActivity implements
         CameraPreviewFrameView.Listener {
@@ -97,9 +99,12 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
     private boolean mIsPictureStreaming = false;
 
     private FURenderer mFURenderer;
-    private byte[] cameraNV21, copyData;
+    private byte[] mCameraNV21;
+    private byte[] mCameraNV21Local;
+    private byte[] mReadback;
+    private byte[] mReadbackLocal;
+    private volatile boolean mIsSwitchingCamera;
     private BeautyControlView mFaceunityControlView;
-    private String isOpen;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,7 +117,6 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         mMediaStreamingManager.resume();
         if (mFaceunityControlView != null) {
             mFaceunityControlView.onResume();
-            mCameraPreviewFrameView.onResume();
         }
     }
 
@@ -122,8 +126,8 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         normalPause();
         if (mFaceunityControlView != null) {
             mFaceunityControlView.onPause();
-            mCameraPreviewFrameView.onPause();
-            cameraNV21 = null;
+            mCameraNV21 = null;
+            mReadback = null;
         }
     }
 
@@ -168,60 +172,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
             microphoneStreamingSetting.setChannelConfig(AudioFormat.CHANNEL_IN_STEREO);
         }
         mMediaStreamingManager.prepare(mCameraStreamingSetting, microphoneStreamingSetting, buildWatermarkSetting(), mProfile);
-        mFaceunityControlView = (BeautyControlView) findViewById(R.id.faceunity_control);
-        isOpen = PreferenceUtil.getString(StreamingApplication.getInstance(), PreferenceUtil.KEY_FACEUNITY_ISON);
-
-        if (mCameraConfig.mIsCustomFaceBeauty) {
-            //faceunity.FU_ADM_FLAG_EXTERNAL_OES_TEXTURE == 1
-            if (isOpen.equals("true")) {
-                mFURenderer = new FURenderer.Builder(this).inputTextureType(1).build();
-                mFaceunityControlView.setOnFaceUnityControlListener(mFURenderer);
-            } else {
-                mFaceunityControlView.setVisibility(View.GONE);
-            }
-
-
-            mMediaStreamingManager.setSurfaceTextureCallback(new SurfaceTextureCallback() {
-
-                @Override
-                public void onSurfaceCreated() {
-                    if (mFURenderer != null) {
-                        mFURenderer.setCurrentCameraType(mCurrentCamFacingIndex == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT.ordinal() ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK);
-                        mFURenderer.loadItems();
-                    }
-                }
-
-                @Override
-                public void onSurfaceChanged(int width, int height) {
-                }
-
-                @Override
-                public void onSurfaceDestroyed() {
-                    if (mFURenderer != null)
-                        mFURenderer.onSurfaceDestroyed();
-                }
-
-                @Override
-                public int onDrawFrame(int texId, int width, int height, float[] floats) {
-                    if (cameraNV21 == null || cameraNV21.length <= 0 || mFURenderer == null)
-                        return texId;
-                    if (copyData == null)
-                        copyData = new byte[cameraNV21.length];
-                    System.arraycopy(cameraNV21, 0, copyData, 0, cameraNV21.length);
-                    return mFURenderer.onDrawFrameDoubleInput(copyData, texId, width, height);
-                }
-            });
-
-            mMediaStreamingManager.setStreamingPreviewCallback(new StreamingPreviewCallback() {
-                @Override
-                public boolean onPreviewFrame(byte[] data, int width, int height, int rotation, int fmt, long tsInNanoTime) {
-                    cameraNV21 = data;
-                    return true;
-                }
-            });
-        } else {
-            mFaceunityControlView.setVisibility(View.INVISIBLE);
-        }
+        mMediaStreamingManager.setAutoRefreshOverlay(true);
         mCameraPreviewFrameView.setListener(this);
         mMediaStreamingManager.setStreamingSessionListener(this);
         mMediaStreamingManager.setStreamStatusCallback(this);
@@ -254,6 +205,91 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+
+        mFaceunityControlView = (BeautyControlView) findViewById(R.id.faceunity_control);
+        String isOpen = PreferenceUtil.getString(StreamingApplication.getInstance(), PreferenceUtil.KEY_FACEUNITY_ISON);
+        if (mCameraConfig.mIsCustomFaceBeauty) {
+            if ("true".equals(isOpen)) {
+                mFURenderer = new FURenderer.Builder(this).inputTextureType(FURenderer.oes).build();
+                mFaceunityControlView.setOnFaceUnityControlListener(mFURenderer);
+            } else {
+                mFaceunityControlView.setVisibility(View.GONE);
+            }
+
+            // for preview
+            mMediaStreamingManager.setSurfaceTextureCallback(new SurfaceTextureCallback() {
+
+                @Override
+                public void onSurfaceCreated() {
+                    if (mFURenderer != null) {
+                        mFURenderer.setCurrentCameraType(mCurrentCamFacingIndex == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT.ordinal() ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK);
+                        mFURenderer.loadItems();
+                    }
+                    mCameraNV21 = null;
+                    mCameraNV21Local = null;
+                    mReadback = null;
+                    mReadbackLocal = null;
+                }
+
+                @Override
+                public void onSurfaceChanged(int width, int height) {
+                }
+
+                @Override
+                public void onSurfaceDestroyed() {
+                    if (mFURenderer != null) {
+                        mFURenderer.destroyItems();
+                    }
+                }
+
+                /* Camera 切换时不进行美颜和编码，同时把数据缓存清空 */
+                @Override
+                public int onDrawFrame(int texId, int width, int height, float[] floats) {
+//                    Log.v(TAG, "onDrawFrame() called with: texId = [" + texId + "], width = ["
+//                            + width + "], height = [" + height + "], floats = [" + floats + "]");
+                    // call on GLThread
+                    if (mIsSwitchingCamera || mCameraNV21 == null || mFURenderer == null) {
+                        return texId;
+                    }
+                    if (mReadbackLocal == null) {
+                        mReadbackLocal = new byte[mCameraNV21.length];
+                    }
+                    int fuTexId = mFURenderer.onDrawFrameDoubleInput(mCameraNV21, texId, width, height, mReadbackLocal, width, height);
+                    mReadback = Arrays.copyOf(mReadbackLocal, mReadbackLocal.length);
+                    return fuTexId;
+                }
+            });
+
+            // for encoding
+            mMediaStreamingManager.setStreamingPreviewCallback(new StreamingPreviewCallback() {
+
+                @Override
+                public boolean onPreviewFrame(byte[] data, int width, int height, int rotation, int fmt, long tsInNanoTime) {
+//                    Log.v(TAG, "onPreviewFrame() called with: data = [" + data + "], width = ["
+//                            + width + "], height = [" + height + "], rotation = [" + rotation
+//                            + "], fmt = [" + fmt + "], tsInNanoTime = [" + tsInNanoTime + "]");
+                    // call on Camera thread
+                    if (mIsSwitchingCamera) {
+                        return true;
+                    }
+                    if (mCameraNV21Local == null) {
+                        mCameraNV21Local = new byte[data.length];
+                    }
+                    System.arraycopy(data, 0, mCameraNV21Local, 0, data.length);
+                    mCameraNV21 = Arrays.copyOf(mCameraNV21Local, mCameraNV21Local.length);
+                    if (mReadback != null) {
+                        System.arraycopy(mReadback, 0, data, 0, mReadback.length);
+                    }
+                    if (mFURenderer != null) {
+                        mFURenderer.setInputImageOrientation(rotation);
+                    }
+                    return true;
+                }
+            });
+
+        } else {
+            mFaceunityControlView.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -289,7 +325,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         @Override
         public void run() {
             mCurrentCamFacingIndex = (mCurrentCamFacingIndex + 1) % CameraStreamingSetting.getNumberOfCameras();
-            CameraStreamingSetting.CAMERA_FACING_ID facingId;
+            final CameraStreamingSetting.CAMERA_FACING_ID facingId;
             if (mCurrentCamFacingIndex == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_BACK.ordinal()) {
                 facingId = CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_BACK;
             } else if (mCurrentCamFacingIndex == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT.ordinal()) {
@@ -297,17 +333,23 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
             } else {
                 facingId = CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_3RD;
             }
-            Log.i(TAG, "setCameraId:" + facingId);
-
+            Log.i(TAG, "switchCamera:" + facingId);
+            mIsSwitchingCamera = true;
             if (mMediaStreamingManager.switchCamera(facingId)) {
                 mCameraPreviewFrameView.queueEvent(new Runnable() {
                     @Override
                     public void run() {
-                        if (mFURenderer != null)
+                        if (mFURenderer != null) {
+                            mFURenderer.onCameraChange(facingId == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_BACK ? Camera.CameraInfo.CAMERA_FACING_BACK :
+                                    Camera.CameraInfo.CAMERA_FACING_FRONT, 0);
                             mFURenderer.destroyItems();
+                        }
                     }
                 });
             }
+
+            mIsEncodingMirror = mCameraConfig.mEncodingMirror;
+            mIsPreviewMirror = facingId == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT && mCameraConfig.mPreviewMirror;
         }
     }
 
@@ -414,7 +456,8 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
                 bmp.recycle();
                 bmp = null;
             } finally {
-                if (bos != null) bos.close();
+                if (bos != null)
+                    bos.close();
             }
 
             final String info = "Save frame to:" + Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + filename;
@@ -440,6 +483,9 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         watermarkSetting.setResourceId(R.drawable.qiniu_logo);
         watermarkSetting.setAlpha(mEncodingConfig.mWatermarkAlpha);
         watermarkSetting.setSize(mEncodingConfig.mWatermarkSize);
+        if (mEncodingConfig.mWatermarkCustomWidth != 0 || mEncodingConfig.mWatermarkCustomHeight != 0) {
+            watermarkSetting.setCustomSize(mEncodingConfig.mWatermarkCustomWidth, mEncodingConfig.mWatermarkCustomHeight);
+        }
         if (mEncodingConfig.mIsWatermarkLocationPreset) {
             watermarkSetting.setLocation(mEncodingConfig.mWatermarkLocationPreset);
         } else {
@@ -452,6 +498,8 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
     private CameraStreamingSetting buildCameraStreamingSetting() {
         mCameraConfig = (CameraConfig) getIntent().getSerializableExtra("CameraConfig");
 
+        Log.i(TAG, "mIsCustomFaceBeauty:" + mCameraConfig.mIsCustomFaceBeauty
+                + "--mIsFaceBeautyEnabled:" + mCameraConfig.mIsFaceBeautyEnabled);
         CameraStreamingSetting cameraStreamingSetting = new CameraStreamingSetting();
         cameraStreamingSetting.setCameraId(mCameraConfig.mFrontFacing ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK)
                 .setCameraPrvSizeLevel(mCameraConfig.mSizeLevel)
@@ -504,11 +552,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         mIsEncodingMirror = mCameraConfig.mEncodingMirror;
         mCurrentCamFacingIndex = mCameraConfig.mFrontFacing ? 1 : 0;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            requestWindowFeature(Window.FEATURE_ACTION_BAR_OVERLAY);
-        } else {
-            requestWindowFeature(Window.FEATURE_NO_TITLE);
-        }
+        requestWindowFeature(Window.FEATURE_ACTION_BAR_OVERLAY);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -524,6 +568,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
         Button previewMirrorBtn = (Button) findViewById(R.id.preview_mirror_btn);
         Button encodingMirrorBtn = (Button) findViewById(R.id.encoding_mirror_btn);
         Button picStreamingBtn = (Button) findViewById(R.id.pic_streaming_btn);
+        Button addOverlayBtn = (Button) findViewById(R.id.add_overlay_btn);
 
         mFaceBeautyBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -579,6 +624,25 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
             }
         });
 
+        if (mEncodingConfig.mCodecType == AVCodecType.HW_VIDEO_SURFACE_AS_INPUT_WITH_HW_AUDIO_CODEC ||
+                mEncodingConfig.mCodecType == AVCodecType.HW_VIDEO_SURFACE_AS_INPUT_WITH_SW_AUDIO_CODEC ||
+                mEncodingConfig.mCodecType == AVCodecType.HW_VIDEO_WITH_HW_AUDIO_CODEC ||
+                mEncodingConfig.mCodecType == AVCodecType.HW_VIDEO_CODEC) {
+            addOverlayBtn.setVisibility(View.VISIBLE);
+            addOverlayBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ImageView imageOverlay = new ImageView(AVStreamingActivity.this);
+                    imageOverlay.setImageResource(R.drawable.qiniu_logo);
+                    imageOverlay.setOnTouchListener(new ViewTouchListener(imageOverlay));
+                    ((FrameLayout) findViewById(R.id.content)).addView(imageOverlay, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT));
+
+                    mMediaStreamingManager.addOverlay(imageOverlay);
+                    Toast.makeText(AVStreamingActivity.this, "双击删除贴图!", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
         mTorchBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -605,6 +669,9 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
             @Override
             public void onClick(View view) {
                 if (isPictureStreaming()) {
+                    return;
+                }
+                if (mIsSwitchingCamera) {
                     return;
                 }
 
@@ -640,7 +707,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
 
         SeekBar seekBarBeauty = (SeekBar) findViewById(R.id.beautyLevel_seekBar);
         if (mCameraConfig.mIsCustomFaceBeauty) {
-            seekBarBeauty.setVisibility(View.INVISIBLE);
+            seekBarBeauty.setVisibility(View.GONE);
         }
         seekBarBeauty.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -664,6 +731,85 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
 
         initButtonText();
         initAudioMixerPanel();
+    }
+
+    private class ViewTouchListener implements View.OnTouchListener {
+        private float lastTouchRawX;
+        private float lastTouchRawY;
+        private boolean scale;
+        private View mView;
+
+        public ViewTouchListener(View view) {
+            mView = view;
+        }
+
+        GestureDetector.SimpleOnGestureListener simpleOnGestureListener = new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                ((FrameLayout) findViewById(R.id.content)).removeView(mView);
+                mMediaStreamingManager.removeOverlay(mView);
+                return true;
+            }
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                return true;
+            }
+        };
+
+        final GestureDetector gestureDetector = new GestureDetector(AVStreamingActivity.this, simpleOnGestureListener);
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if (gestureDetector.onTouchEvent(event)) {
+                return true;
+            }
+
+            int action = event.getAction();
+            float touchRawX = event.getRawX();
+            float touchRawY = event.getRawY();
+            float touchX = event.getX();
+            float touchY = event.getY();
+
+            if (action == MotionEvent.ACTION_DOWN) {
+                boolean xOK = touchX >= v.getWidth() * 3 / 4 && touchX <= v.getWidth();
+                boolean yOK = touchY >= v.getHeight() * 2 / 4 && touchY <= v.getHeight();
+                scale = xOK && yOK;
+            }
+
+            if (action == MotionEvent.ACTION_MOVE) {
+                float deltaRawX = touchRawX - lastTouchRawX;
+                float deltaRawY = touchRawY - lastTouchRawY;
+
+                if (scale) {
+                    // rotate
+                    float centerX = v.getX() + (float) v.getWidth() / 2;
+                    float centerY = v.getY() + (float) v.getHeight() / 2;
+                    double angle = Math.atan2(touchRawY - centerY, touchRawX - centerX) * 180 / Math.PI;
+                    v.setRotation((float) angle - 45);
+
+                    // scale
+                    float xx = (touchRawX >= centerX ? deltaRawX : -deltaRawX);
+                    float yy = (touchRawY >= centerY ? deltaRawY : -deltaRawY);
+                    float sf = (v.getScaleX() + xx / v.getWidth() + v.getScaleY() + yy / v.getHeight()) / 2;
+                    v.setScaleX(sf);
+                    v.setScaleY(sf);
+                } else {
+                    // translate
+                    v.setTranslationX(v.getTranslationX() + deltaRawX);
+                    v.setTranslationY(v.getTranslationY() + deltaRawY);
+                }
+            }
+
+            if (action == MotionEvent.ACTION_UP) {
+//                当 mMediaStreamingManager.setAutoRefreshOverlay(false) 时自动刷新关闭，建议在 UP 事件里进行手动刷新。
+//                mMediaStreamingManager.refreshOverlay(v, false);
+            }
+
+            lastTouchRawX = touchRawX;
+            lastTouchRawY = touchRawY;
+            return true;
+        }
     }
 
     private void initButtonText() {
@@ -834,6 +980,9 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
                 if (extra != null) {
                     Log.i(TAG, "current camera id:" + (Integer) extra);
                 }
+                mIsSwitchingCamera = false;
+                mCameraNV21 = null;
+                mCameraNV21Local = null;
                 Log.i(TAG, "camera switched");
                 final int currentCamId = (Integer) extra;
                 this.runOnUiThread(new Runnable() {
@@ -859,6 +1008,7 @@ public class AVStreamingActivity extends StreamingBaseActivity implements
                     });
                 }
                 break;
+                default:
         }
     }
 
