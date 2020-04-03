@@ -2,32 +2,24 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 28
-    buildToolsVersion '28.0.3'
-
+    buildToolsVersion "28.0.3"
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 28
-        versionCode 64
-        // 6.4.0_tf_phy-cf6b7963-165b1e1-085c8ad
-        versionName "6.4.0"
+        versionCode 660
+        versionName "6.6.0"
+        // 6.6.0_tf_phy-93f13193-b9e3359-7fd8bd8
     }
-
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
-    sourceSets {
-        main.assets.srcDirs += ['src/main/assets', 'src/main/effects/bundle']
-        main.res.srcDirs += ['src/mian/res', 'src/main/effects/res', 'src/main/filters/res']
-    }
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support:recyclerview-v7:28.0.0'
-    implementation 'de.hdodenhof:circleimageview:3.0.0'
 }

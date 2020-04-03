@@ -1,70 +1,48 @@
-# FUQiniuDemoDroid
+## FUQiniuDemoDroid 快速接入文档
 
-FUQiniuDemoDroid 是集成了 Faceunity 面部跟踪和虚拟道具功能和**[七牛直播推流](https://developer.qiniu.com/pili/sdk/3722/PLDroidMediaStreaming-historical-record)** SDK 的 Demo 。
-本文是 FaceUnity SDK 快速对接牛短视频 SDK 的导读说明，关于 FaceUnity SDK 的更多详细说明，请参看 [FULiveDemo](https://github.com/Faceunity/FULiveDemoDroid/tree/dev).
+FUQiniuDemoDroid 是集成了 Faceunity 面部跟踪和虚拟道具功能 和 **[七牛直播推流](https://developer.qiniu.com/pili/sdk/3715/PLDroidMediaStreaming-overview)** 的 Demo。
+
+本文是 FaceUnity SDK 快速对 七牛直播推流 SDK 的导读说明，关于 `FaceUnity SDK` 的详细说明，请参看 **[FULiveDemoDroid](https://github.com/Faceunity/FULiveDemoDroid/tree/dev)**
 
 ## 快速集成方法
-### 添加module
-添加faceunity module到工程中，在app dependencies里添加compile project(':faceunity')
-### 修改代码
-#### 初始化与监听回调
-在AVStreamingActivity的
-initStreamingManager方法中添加
-```
-mFURenderer = new FURenderer.Builder(this).inputTextureType(faceunity.FU_ADM_FLAG_EXTERNAL_OES_TEXTURE).build();
 
-mMediaStreamingManager.setSurfaceTextureCallback(new SurfaceTextureCallback() {
+### 一、导入 SDK
 
-  @Override
-  public void onSurfaceCreated() {
-      //初始化并加载美颜道具、默认道具
-      mFURenderer.loadItems(mCurrentCamFacingIndex == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT.ordinal() ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK);
-  }
+将 faceunity  模块添加到工程中，下面是一些对文件的说明。
 
-  @Override
-  public void onSurfaceChanged(int width, int height) {
-  }
+- jniLibs 文件夹下 libnama.so 和 libfuai.so 是人脸跟踪和道具绘制的静态库
+- libs 文件夹下 nama.jar 是供应用层调用的 JNI 接口
+- assets 文件夹下 AI_model/ai_face_processor.bundle 是人脸识别数据包（自 6.6.0 版本起，v3.bundle 不再使用）
+- assets 文件夹下 face_beautification.bundle 是美颜功能数据包
+- assets 文件夹下 normal 中的 \*.bundle 文件是特效贴纸文件，自定义特效贴纸制作的文档和工具，请联系技术支持获取。
 
-  @Override
-  public void onSurfaceDestroyed() {
-      //销毁道具
-      mFURenderer.destroyItems();
-  }
+### 二、使用 SDK
 
-  @Override
-  public int onDrawFrame(int texId, int width, int height, float[] floats) {
-      //渲染道具到原始数据上
-      return mFURenderer.onDrawFrame(texId, width, height, floats);
-  }
-});
+#### 1. 初始化
 
-mMediaStreamingManager.setStreamingPreviewCallback(new StreamingPreviewCallback() {
-    @Override
-    public boolean onPreviewFrame(byte[] data, int width, int height, int rotation, int fmt, long tsInNanoTime) {
-        //获取camera数据用于人脸追踪
-        return mFURenderer.onPreviewFrame(data, width, height, rotation, fmt, tsInNanoTime);
-    }
-});
-```
-### 修改默认美颜参数
-修改faceunity中faceunity中以下代码
-```
-private float mFaceBeautyALLBlurLevel = 1.0f;//精准磨皮
-private float mFaceBeautyType = 0.0f;//美肤类型
-private float mFaceBeautyBlurLevel = 0.7f;//磨皮
-private float mFaceBeautyColorLevel = 0.5f;//美白
-private float mFaceBeautyRedLevel = 0.5f;//红润
-private float mBrightEyesLevel = 1000.7f;//亮眼
-private float mBeautyTeethLevel = 1000.7f;//美牙
+在 `FURenderer` 类 的  `initFURenderer` 静态方法是对 FaceUnity SDK 一些全局数据初始化的封装，可以在 Application 中调用，也可以在工作线程调用，仅需初始化一次即可。
 
-private float mFaceBeautyFaceShape = 4.0f;//脸型
-private float mFaceBeautyEnlargeEye = 0.4f;//大眼
-private float mFaceBeautyCheekThin = 0.4f;//瘦脸
-private float mFaceBeautyEnlargeEye_old = 0.4f;//大眼
-private float mFaceBeautyCheekThin_old = 0.4f;//瘦脸
-private float mChinLevel = 0.3f;//下巴
-private float mForeheadLevel = 0.3f;//额头
-private float mThinNoseLevel = 0.5f;//瘦鼻
-private float mMouthShape = 0.4f;//嘴形
-```
-参数含义与取值范围参考[这里](http://www.faceunity.com/technical/android-beauty.html)，如果使用界面，则需要同时修改界面中的初始值。
+#### 2.创建
+
+在 `FURenderer` 类 的  `onSurfaceCreated` 方法是对 FaceUnity SDK 每次使用前数据初始化的封装。
+
+#### 3. 图像处理
+
+在 `FURenderer` 类 的  `onDrawFrame` 方法是对 FaceUnity SDK 图像处理方法的封装，该方法有许多重载方法适用于不同的数据类型需求。
+
+#### 4. 销毁
+
+在 `FURenderer` 类 的  `onSurfaceDestroyed` 方法是对 FaceUnity SDK 数据销毁的封装。
+
+#### 5. 切换相机
+
+调用 `FURenderer` 类 的  `onCameraChanged` 方法，用于重新为 SDK 设置参数。
+
+上面一系列方法的使用，具体在 demo 中的 `AVStreamingActivity`类，参考该代码示例接入即可。
+
+### 三、切换道具及调整美颜参数
+
+`FURenderer` 类实现了 `OnFaceUnityControlListener` 接口，而 `OnFaceUnityControlListener` 接口是对切换贴纸道具及调整美颜参数等一系列操作的封装。在 demo 中，`BeautyControlView` 用于实现用户交互，调用了 `OnFaceUnityControlListener` 的方法实现功能。
+
+
+**至此快速集成完毕，关于 FaceUnity SDK 的更多详细说明，请参看 [FULiveDemoDroid](https://github.com/Faceunity/FULiveDemoDroid/)**
