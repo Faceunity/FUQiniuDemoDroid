@@ -139,7 +139,7 @@
 
     </LinearLayout>
 
-    <com.faceunity.beautycontrolview.BeautyControlView
+    <com.faceunity.nama.ui.BeautyControlView
         android:id="@+id/faceunity_control"
         android:layout_gravity="bottom"
         android:layout_width="match_parent"
