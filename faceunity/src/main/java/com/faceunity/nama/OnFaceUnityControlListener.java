@@ -4,6 +4,8 @@ import com.faceunity.nama.entity.Effect;
 
 /**
  * FURenderer与界面之间的交互接口
+ *
+ * @author Richie on 2019.07.18
  */
 public interface OnFaceUnityControlListener {
     /**
@@ -35,7 +37,7 @@ public interface OnFaceUnityControlListener {
     void onSkinDetectSelected(int isOn);
 
     /**
-     * 美肤类型
+     * 设置美肤类型
      *
      * @param skinType 0:清晰美肤, 1:朦胧美肤
      */

@@ -614,7 +614,7 @@ public class BeautyControlView extends FrameLayout {
             holder.effectImg.setImageResource(iconId);
             int selResId = mSelectedEffectPosition == position ? R.drawable.effect_select : android.R.color.transparent;
             holder.effectImg.setBackgroundResource(selResId);
-            holder.effectImg.setOnClickListener(new OnClickListener() {
+            holder.effectImg.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (mSelectedEffectPosition == position) {

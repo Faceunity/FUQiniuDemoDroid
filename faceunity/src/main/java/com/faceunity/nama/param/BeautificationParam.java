@@ -7,12 +7,6 @@ package com.faceunity.nama.param;
  */
 public final class BeautificationParam {
     /**
-     * 设置美颜 bundle 的 landmarks type，默认 faceunity.FUAITYPE_FACEPROCESSOR
-     * 只进入美颜场景时，参数“landmarks_type”切换为 FaceUnity.FUAITYPE_FACELANDMARKS75，底层只会跑 nn75。
-     * 如果进入美颜+其他内容的场景，需要设置为 FaceUnity.FUAITYPE_FACEPROCESSOR，避免同时跑两份。
-     */
-    public static final String LANDMARKS_TYPE = "landmarks_type";
-    /**
      * 美颜参数全局开关，0 关，1 开，默认 1
      */
     public static final String IS_BEAUTY_ON = "is_beauty_on";
@@ -108,29 +102,6 @@ public final class BeautificationParam {
      * 变形渐变调整参数，0 渐变关闭，大于 0 渐变开启，值为渐变需要的帧数
      */
     public static final String CHANGE_FRAMES = "change_frames";
-
-    /**
-     * 女神
-     */
-    public static final int FACE_SHAPE_GODDESS = 0;
-    /**
-     * 网红
-     */
-    public static final int FACE_SHAPE_NET_RED = 1;
-    /**
-     * 自然
-     */
-    public static final int FACE_SHAPE_NATURE = 2;
-    /**
-     * 默认
-     */
-    public static final int FACE_SHAPE_DEFAULT = 3;
-    /**
-     * 精细变形
-     */
-    public static final int FACE_SHAPE_CUSTOM = 4;
-
-    /* 以下是微美型参数 */
     /**
      * 去黑眼圈强度，0.0 到 1.0 变强
      */
