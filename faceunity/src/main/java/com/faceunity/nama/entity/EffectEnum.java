@@ -15,13 +15,13 @@ public enum EffectEnum {
      */
     Effect_none(R.drawable.ic_delete_all, "", "none"),
 
-    Effect_sdlu(R.drawable.sdlu, "normal/sdlu.bundle", "sdlu"),
-    Effect_daisypig(R.drawable.daisypig, "normal/daisypig.bundle", "daisypig"),
-    Effect_fashi(R.drawable.fashi, "normal/fashi.bundle", "fashi"),
-    Effect_chri1(R.drawable.chri1, "normal/chri1.bundle", "chri1"),
-    Effect_xueqiu_lm_fu(R.drawable.xueqiu_lm_fu, "normal/xueqiu_lm_fu.bundle", "xueqiu_lm_fu"),
-    Effect_wobushi(R.drawable.wobushi, "normal/wobushi.bundle", "wobushi"),
-    Effect_gaoshiqing(R.drawable.gaoshiqing, "normal/gaoshiqing.bundle", "gaoshiqing");
+    Effect_sdlu(R.drawable.sdlu, "effect/sdlu.bundle", "sdlu"),
+    Effect_daisypig(R.drawable.daisypig, "effect/daisypig.bundle", "daisypig"),
+    Effect_fashi(R.drawable.fashi, "effect/fashi.bundle", "fashi"),
+    Effect_chri1(R.drawable.chri1, "effect/chri1.bundle", "chri1"),
+    Effect_xueqiu_lm_fu(R.drawable.xueqiu_lm_fu, "effect/xueqiu_lm_fu.bundle", "xueqiu_lm_fu"),
+    Effect_wobushi(R.drawable.wobushi, "effect/wobushi.bundle", "wobushi"),
+    Effect_gaoshiqing(R.drawable.gaoshiqing, "effect/gaoshiqing.bundle", "gaoshiqing");
 
     private int iconId;
     private String filePath;
