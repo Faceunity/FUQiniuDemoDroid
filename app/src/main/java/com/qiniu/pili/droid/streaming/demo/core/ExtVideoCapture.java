@@ -1,6 +1,7 @@
 package com.qiniu.pili.droid.streaming.demo.core;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.util.Log;
@@ -12,6 +13,7 @@ import android.view.WindowManager;
 import com.qiniu.pili.droid.streaming.av.common.PLFourCC;
 
 import java.io.IOException;
+import java.util.List;
 
 public final class ExtVideoCapture implements SurfaceHolder.Callback, Camera.PreviewCallback {
     private static final String TAG = "ExtVideoCapture";

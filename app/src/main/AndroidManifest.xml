@@ -45,7 +45,7 @@
         <activity
             android:name=".activity.AVStreamingActivity"
             android:configChanges="orientation|screenSize"
-            android:theme="@android:style/Theme.Holo.Light.NoActionBar"
+            android:theme="@style/AppTheme"
             android:windowSoftInputMode="stateAlwaysHidden|adjustResize"></activity>
 
         <!--android:theme="@android:style/Theme.Holo.Light.NoActionBar.Fullscreen" >-->
