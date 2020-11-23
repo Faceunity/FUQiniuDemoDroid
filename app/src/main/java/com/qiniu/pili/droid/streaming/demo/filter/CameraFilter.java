@@ -59,8 +59,8 @@ public class CameraFilter extends AbstractFilter implements IFilter {
 
     @Override
     public void onDraw(float[] mvpMatrix, FloatBuffer vertexBuffer, int firstVertex,
-                       int vertexCount, int coordsPerVertex, int vertexStride,
-                       FloatBuffer texBuffer, int textureId, int texStride) {
+            int vertexCount, int coordsPerVertex, int vertexStride,
+            FloatBuffer texBuffer, int textureId, int texStride) {
 
         GlUtil.checkGlError("draw start");
 
@@ -95,7 +95,7 @@ public class CameraFilter extends AbstractFilter implements IFilter {
 
     @Override
     protected void bindGLSLValues(float[] mvpMatrix, FloatBuffer vertexBuffer, int coordsPerVertex,
-                                  int vertexStride, FloatBuffer texBuffer, int texStride) {
+            int vertexStride, FloatBuffer texBuffer, int texStride) {
 
         GLES20.glUniformMatrix4fv(muMVPMatrixLoc, 1, false, mvpMatrix, 0);
         GLES20.glEnableVertexAttribArray(maPositionLoc);

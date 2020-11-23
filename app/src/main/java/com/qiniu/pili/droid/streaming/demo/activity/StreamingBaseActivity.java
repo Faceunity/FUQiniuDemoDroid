@@ -1,11 +1,12 @@
 package com.qiniu.pili.droid.streaming.demo.activity;
 
-import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -32,7 +33,7 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public abstract class StreamingBaseActivity extends Activity implements
+public abstract class StreamingBaseActivity extends FragmentActivity implements
         StreamingSessionListener,
         StreamStatusCallback,
         StreamingStateChangedListener,
@@ -347,7 +348,7 @@ public abstract class StreamingBaseActivity extends Activity implements
             mProfile.setAVProfile(avProfile);
         }
 
-        mProfile.setDnsManager(getMyDnsManager())
+        mProfile.setDnsManager(getMyDnsManager(this))
                 .setStreamStatusConfig(new StreamingProfile.StreamStatusConfig(3))
                 .setSendingBufferProfile(new StreamingProfile.SendingBufferProfile(0.2f, 0.8f, 3.0f, 20 * 1000));
     }
@@ -356,10 +357,10 @@ public abstract class StreamingBaseActivity extends Activity implements
      * If you want to use a custom DNS server, config it
      * Not required.
      */
-    private static DnsManager getMyDnsManager() {
+    private static DnsManager getMyDnsManager(Context context) {
         IResolver r0 = null;
         IResolver r1 = new DnspodFree();
-        IResolver r2 = AndroidDnsServer.defaultResolver();
+        IResolver r2 = AndroidDnsServer.defaultResolver(context);
         try {
             r0 = new Resolver(InetAddress.getByName("119.29.29.29"));
         } catch (IOException ex) {

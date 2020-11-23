@@ -13,19 +13,12 @@ public enum FilterEnum {
     /**
      * 滤镜
      */
-    origin("origin", R.drawable.nature, "原图"),
-
-    delta("delta", R.drawable.delta, "delta"),
-    electric("electric", R.drawable.electric, "electric"),
-    slowlived("slowlived", R.drawable.slowlived, "slowlived"),
-    tokyo("tokyo", R.drawable.tokyo, "tokyo"),
-    warm("warm", R.drawable.warm, "warm"),
-
-    ziran("ziran", R.drawable.origin, "自然"),
-    danya("danya", R.drawable.qingxin, "淡雅"),
-    fennen("fennen", R.drawable.shaonv, "粉嫩"),
-    qingxin("qingxin", R.drawable.ziran, "清新"),
-    hongrun("hongrun", R.drawable.hongrun, "红润");
+    origin("origin", R.drawable.demo_icon_cancel, "原图"),
+    nature1("ziran1", R.drawable.demo_icon_natural_1, "自然 1"),
+    zhiganhui1("zhiganhui1", R.drawable.demo_icon_texture_gray1, "质感灰 1"),
+    bailiang1("bailiang1", R.drawable.demo_icon_bailiang1, "白亮 1"),
+    fennen1("fennen1", R.drawable.demo_icon_fennen1, "粉嫩 1"),
+    lengsediao1("lengsediao1", R.drawable.demo_icon_lengsediao1, "冷色调 1");
 
     private String name;
     private int iconId;
@@ -37,7 +30,7 @@ public enum FilterEnum {
         this.description = description;
     }
 
-    public Filter filter() {
+    public Filter create() {
         return new Filter(name, iconId, description);
     }
 
@@ -45,7 +38,7 @@ public enum FilterEnum {
         FilterEnum[] filterEnums = FilterEnum.values();
         ArrayList<Filter> filters = new ArrayList<>(filterEnums.length);
         for (FilterEnum f : filterEnums) {
-            filters.add(f.filter());
+            filters.add(f.create());
         }
         return filters;
     }
