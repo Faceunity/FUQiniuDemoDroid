@@ -13,6 +13,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioFormat;
+import android.opengl.EGL14;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -27,11 +28,20 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+
+import com.faceunity.core.enumeration.CameraFacingEnum;
+import com.faceunity.core.enumeration.FUAIProcessorEnum;
+import com.faceunity.core.enumeration.FUTransformMatrixEnum;
+import com.faceunity.core.utils.CameraUtils;
 import com.faceunity.nama.FURenderer;
-import com.faceunity.nama.IFURenderer;
-import com.faceunity.nama.utils.CameraUtils;
+import com.faceunity.nama.data.FaceBeautyDataFactory;
+import com.faceunity.nama.data.FaceUnityDataFactory;
+import com.faceunity.nama.listener.FURendererListener;
+import com.faceunity.nama.ui.FaceUnityView;
+
 import com.github.angads25.filepicker.controller.DialogSelectionListener;
 import com.github.angads25.filepicker.model.DialogConfigs;
 import com.github.angads25.filepicker.model.DialogProperties;
@@ -106,6 +116,8 @@ public class AVStreamingActivity extends AppCompatActivity implements
     private int mFrameHeight = 100;
 
     private ControlFragment mControlFragment;
+
+    private TextView mTrackingText;
     private CameraPreviewFrameView mCameraPreviewFrameView;
 
     // 用作演示自定义美颜实现逻辑
@@ -139,13 +151,16 @@ public class AVStreamingActivity extends AppCompatActivity implements
     private int mTimes = 0;
     private boolean mIsPictureStreaming = false;
 
-    private FURenderer mFURenderer;
+    private FURenderer mFURenderer = FURenderer.getInstance();
+    private FaceUnityDataFactory mFaceUnityDataFactory;
     private boolean mIsSwitchingCamera;
     private SensorManager mSensorManager;
     private long mLastClickTime = 0;
     private byte[] mCameraNv21;
     private byte[] mReadback;
     private CSVUtils mCSVUtils;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -175,6 +190,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
         // 初始化 MediaStreamingManager，使用姿势可参考 https://developer.qiniu.com/pili/sdk/3719/PLDroidMediaStreaming-function-using#6
         initStreamingManager();
     }
+
 
     @Override
     protected void onStart() {
@@ -243,6 +259,8 @@ public class AVStreamingActivity extends AppCompatActivity implements
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setRequestedOrientation(isEncOrientationPort ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.activity_av_streaming);
+
+//        mTrackingText = findViewById(R.id)
 
         // 初始化推流控制面板
         mControlFragment = new ControlFragment();
@@ -460,21 +478,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
         String isOpen = PreferenceUtil.getString(StreamingApplication.getInstance(), PreferenceUtil.KEY_FACEUNITY_ISON);
         if (mCameraConfig.mIsCustomFaceBeauty) {
             if ("true".equals(isOpen)) {
-                FURenderer.setup(this);
-                mFURenderer = new FURenderer.Builder(this)
-                        .setInputTextureType(FURenderer.INPUT_TEXTURE_EXTERNAL_OES)
-                        .setCameraFacing(FURenderer.CAMERA_FACING_FRONT)
-                        .setInputImageOrientation(CameraUtils.getCameraOrientation(FURenderer.CAMERA_FACING_FRONT))
-                        .setRunBenchmark(true)
-                        .setOnDebugListener(new FURenderer.OnDebugListener() {
-                            @Override
-                            public void onFpsChanged(double fps, double callTime) {
-                                mControlFragment.setFPS(fps);
-                                Log.d(TAG, "onFpsChanged FPS: " + String.format("%.2f", fps) + ", callTime: " + String.format("%.2f", callTime));
-                            }
-                        })
-                        .build();
-                mControlFragment.setModuleManager(mFURenderer);
+                mControlFragment.setModuleManager();
                 mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
             } else {
                 mControlFragment.goneFaceUnityView();
@@ -486,7 +490,8 @@ public class AVStreamingActivity extends AppCompatActivity implements
                 public void onSurfaceCreated() {
                     Log.d(TAG, "onSurfaceCreated: ");
                     if (mFURenderer != null) {
-                        mFURenderer.onSurfaceCreated();
+                        mFURenderer.setBeautyOn();
+                        mControlFragment.bindDataFactory();
                         initCsvUtil(AVStreamingActivity.this);
                     }
                     mCameraNv21 = null;
@@ -495,14 +500,14 @@ public class AVStreamingActivity extends AppCompatActivity implements
 
                 @Override
                 public void onSurfaceChanged(int width, int height) {
-                    Log.d(TAG, "onSurfaceChanged() width = [" + width + "], height = [" + height + "]");
+//                    Log.d(TAG, "onSurfaceChanged() width = [" + width + "], height = [" + height + "]");
                 }
 
                 @Override
                 public void onSurfaceDestroyed() {
                     Log.d(TAG, "onSurfaceDestroyed: ");
                     if (mFURenderer != null) {
-                        mFURenderer.onSurfaceDestroyed();
+                        mFURenderer.release();
                         mCSVUtils.close();
                     }
                 }
@@ -512,7 +517,10 @@ public class AVStreamingActivity extends AppCompatActivity implements
                 public int onDrawFrame(int texId, int width, int height, float[] floats) {
 //                    Log.v(TAG, "onDrawFrame() called with: texId = [" + texId + "], width = ["
 //                            + width + "], height = [" + height + "], floats = [" + floats + "]");
-                    // call on GLThread
+                    // call on GLThread  8d38c204
+
+                    Log.d(TAG, "onSurfaceDrawFrame: " + EGL14.eglGetCurrentContext());
+
                     if (mFURenderer == null || mIsSwitchingCamera || mCameraNv21 == null) {
                         return texId;
                     }
@@ -520,25 +528,25 @@ public class AVStreamingActivity extends AppCompatActivity implements
                         mReadback = new byte[mCameraNv21.length];
                     }
                     //1 双输入 2  单输入 texture  3 单输入 buffer
-                    int inputType = 3;
+                    int inputType = 1;
                     int fuTexId = texId;
 
                     long start = System.nanoTime();
 
                     switch (inputType) {
                         case 1 :
-                            fuTexId = mFURenderer.onDrawFrameDualInput(mCameraNv21, texId, width, height, mReadback, width, height);
+                            fuTexId = mFURenderer.onDrawFrameDualInput(mCameraNv21, texId, width, height);
                             break;
                         case 2:
                             fuTexId = mFURenderer.onDrawFrameSingleInput(texId, width, height);
                             break;
                         case 3:
                             System.arraycopy(mCameraNv21, 0, mReadback, 0, mCameraNv21.length);
-                            fuTexId = mFURenderer.onDrawFrameSingleInput(mReadback, width, height, IFURenderer.INPUT_FORMAT_NV21_BUFFER);
+                            fuTexId = mFURenderer.onDrawFrameSingleInput(mReadback, width, height);
                             break;
                     }
                     long renderTime = System.nanoTime() - start;
-
+                    Log.d("TestTime", ""+renderTime);
                     mCSVUtils.writeCsv(null, renderTime);
                     return fuTexId;
                 }
@@ -690,13 +698,16 @@ public class AVStreamingActivity extends AppCompatActivity implements
                 @Override
                 public void run() {
                     if (mFURenderer != null) {
-                        int cameraType = facingId == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_BACK
-                                ? FURenderer.CAMERA_FACING_BACK : FURenderer.CAMERA_FACING_FRONT;
-                        mFURenderer.onCameraChanged(cameraType, CameraUtils.getCameraOrientation(cameraType));
-                        if (mFURenderer.getMakeupModule() != null) {
-                            mFURenderer.getMakeupModule().setIsMakeupFlipPoints(cameraType == FURenderer.CAMERA_FACING_BACK ? 1 : 0);
+
+                        if(facingId == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT){
+                            mFURenderer.setCameraFacing(CameraFacingEnum.CAMERA_FRONT);
+                            mFURenderer.setInputOrientation(270);
+                        } else if (facingId == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_BACK){
+                            mFURenderer.setCameraFacing(CameraFacingEnum.CAMERA_BACK);
+                            mFURenderer.setInputOrientation(90);
                         }
-                        mFURenderer.onSurfaceDestroyed();
+
+                        mFURenderer.release();
                     }
                 }
             });
@@ -1288,7 +1299,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
          */
         @Override
         public int onDrawFrame(int texId, int width, int height, float[] transformMatrix) {
-            Log.i(TAG, "onDrawFrame : " + Thread.currentThread().getId());
+//            Log.i(TAG, "onDrawFrame : " + Thread.currentThread().getId());
             return mFBO.drawFrame(texId, width, height);
         }
     };
@@ -1298,11 +1309,12 @@ public class AVStreamingActivity extends AppCompatActivity implements
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             float x = event.values[0];
             float y = event.values[1];
+            float z = event.values[2];
             if (Math.abs(x) > 3 || Math.abs(y) > 3) {
                 if (Math.abs(x) > Math.abs(y)) {
-                    mFURenderer.onDeviceOrientationChanged(x > 0 ? 0 : 180);
+                    mFURenderer.setDeviceOrientation(x > 0 ? 0 : 180);
                 } else {
-                    mFURenderer.onDeviceOrientationChanged(y > 0 ? 90 : 270);
+                    mFURenderer.setDeviceOrientation(y > 0 ? 90 : 270);
                 }
             }
         }
@@ -1544,6 +1556,35 @@ public class AVStreamingActivity extends AppCompatActivity implements
                 }).show();
     }
 
+    /**
+     * FURenderer状态回调
+     */
+    private FURendererListener mFURendererListener = new FURendererListener() {
+
+        @Override
+        public void onPrepare() {
+
+        }
+
+        @Override
+        public void onTrackStatusChanged(FUAIProcessorEnum type, int status) {
+            runOnUiThread(() -> {
+                mTrackingText.setText(type == FUAIProcessorEnum.FACE_PROCESSOR ? R.string.toast_not_detect_face : R.string.toast_not_detect_body);
+                mTrackingText.setVisibility(status > 0 ? View.INVISIBLE : View.VISIBLE);
+            });
+        }
+
+        @Override
+        public void onFpsChanged(double fps, double callTime) {
+
+        }
+
+        @Override
+        public void onRelease() {
+
+        }
+    };
+
     private void initCsvUtil(Context context) {
         mCSVUtils = new CSVUtils(context);
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault());
@@ -1554,9 +1595,9 @@ public class AVStreamingActivity extends AppCompatActivity implements
         String filePath = Constant.filePath + dateStrDir + File.separator + "excel-" + dateStrFile + ".csv";
         Log.d(TAG, "initLog: CSV file path:" + filePath);
         StringBuilder headerInfo = new StringBuilder();
-        headerInfo.append("version：").append(FURenderer.getVersion()).append(CSVUtils.COMMA)
-                .append("机型：").append(android.os.Build.MANUFACTURER).append(android.os.Build.MODEL)
-                .append("处理方式：Texture").append(CSVUtils.COMMA);
+        headerInfo.append("version：").append(mFURenderer.getVersion()).append(CSVUtils.COMMA)
+                .append("机型：").append(android.os.Build.MANUFACTURER).append(android.os.Build.MODEL).append(CSVUtils.COMMA)
+                .append("处理方式：双输入纹理输出").append(CSVUtils.COMMA);
         mCSVUtils.initHeader(filePath, headerInfo);
     }
 }

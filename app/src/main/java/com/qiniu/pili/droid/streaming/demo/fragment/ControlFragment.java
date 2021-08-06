@@ -1,6 +1,7 @@
 package com.qiniu.pili.droid.streaming.demo.fragment;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Fragment;
 import android.net.Uri;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +22,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.faceunity.nama.FURenderer;
+import com.faceunity.nama.data.FaceUnityDataFactory;
 import com.faceunity.nama.ui.FaceUnityView;
 import com.qiniu.pili.droid.streaming.demo.R;
 
@@ -52,6 +55,8 @@ public class ControlFragment extends Fragment {
     private ImageView mPicStreamingImageView;
     private FaceUnityView mFaceUnityView;
     private TextView mTvFPS;
+
+    private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(0);;
 
     private boolean mIsHwVideoEncodeType = false;
     private boolean mShutterButtonPressed = false;
@@ -90,13 +95,17 @@ public class ControlFragment extends Fragment {
         mOnEventClickedListener = listener;
     }
 
-    public void setModuleManager(final FURenderer fuRenderer){
+    public void setModuleManager(){
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                mFaceUnityView.setModuleManager(fuRenderer);
+                mFaceUnityView.bindDataFactory(mFaceUnityDataFactory);
             }
         }, 100);
+    }
+
+    public void bindDataFactory(){
+        mFaceUnityDataFactory.bindCurrentRenderer();
     }
 
     public void goneFaceUnityView() {
