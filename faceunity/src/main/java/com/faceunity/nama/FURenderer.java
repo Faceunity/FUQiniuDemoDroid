@@ -9,6 +9,7 @@ import com.faceunity.core.entity.FURenderOutputData;
 import com.faceunity.core.enumeration.CameraFacingEnum;
 import com.faceunity.core.enumeration.FUAIProcessorEnum;
 import com.faceunity.core.enumeration.FUAITypeEnum;
+import com.faceunity.core.enumeration.FUTransformMatrixEnum;
 import com.faceunity.core.faceunity.FURenderConfig;
 import com.faceunity.core.faceunity.FURenderKit;
 import com.faceunity.core.faceunity.FURenderManager;
@@ -57,9 +58,6 @@ public class FURenderer extends IFURenderer {
     private String BUNDLE_AI_FACE = "model" + File.separator + "ai_face_processor.bundle";
     private String BUNDLE_AI_HUMAN = "model" + File.separator + "ai_human_processor.bundle";
 
-    /* 相机角度-朝向映射 */
-    private HashMap<Integer, CameraFacingEnum> cameraOrientationMap = new HashMap<>();
-
     /* GL 线程 ID */
     private Long mGlThreadId = 0L;
     /* 任务队列 */
@@ -91,10 +89,6 @@ public class FURenderer extends IFURenderer {
                 if (i == FURenderConfig.OPERATE_SUCCESS_AUTH) {
                     mFURenderKit.getFUAIController().loadAIProcessor(BUNDLE_AI_FACE, FUAITypeEnum.FUAITYPE_FACEPROCESSOR);
                     mFURenderKit.getFUAIController().loadAIProcessor(BUNDLE_AI_HUMAN, FUAITypeEnum.FUAITYPE_HUMAN_PROCESSOR);
-                    int cameraFrontOrientation = CameraUtils.INSTANCE.getCameraOrientation(Camera.CameraInfo.CAMERA_FACING_FRONT);
-                    int cameraBackOrientation = CameraUtils.INSTANCE.getCameraOrientation(Camera.CameraInfo.CAMERA_FACING_BACK);
-                    cameraOrientationMap.put(cameraFrontOrientation, CameraFacingEnum.CAMERA_FRONT);
-                    cameraOrientationMap.put(cameraBackOrientation, CameraFacingEnum.CAMERA_BACK);
                 }
             }
 
@@ -151,6 +145,7 @@ public class FURenderer extends IFURenderer {
         config.setDeviceOrientation(deviceOrientation);
         config.setInputBufferMatrix(inputBufferMatrix);
         config.setInputTextureMatrix(inputTextureMatrix);
+        config.setOutputMatrix(outputMatrix);
         config.setCameraFacing(cameraFacing);
         FURenderOutputData outputData = mFURenderKit.renderWithInput(inputData);
         if (outputData.getTexture() != null && outputData.getTexture().getTexId() > 0) {
@@ -208,6 +203,23 @@ public class FURenderer extends IFURenderer {
         }
     }
 
+    @Override
+    public void setCameraFacing(CameraFacingEnum cameraFacing) {
+        super.setCameraFacing(cameraFacing);
+
+        if (cameraFacing == CameraFacingEnum.CAMERA_FRONT) {
+            setInputOrientation(270);
+            inputTextureMatrix = FUTransformMatrixEnum.CCROT0_FLIPVERTICAL;
+            inputBufferMatrix = FUTransformMatrixEnum.CCROT0_FLIPVERTICAL;
+            outputMatrix = FUTransformMatrixEnum.CCROT0;
+        }else {
+            setInputOrientation(90);
+            inputTextureMatrix = FUTransformMatrixEnum.CCROT0;
+            inputBufferMatrix = FUTransformMatrixEnum.CCROT0;
+            outputMatrix = FUTransformMatrixEnum.CCROT0_FLIPVERTICAL;
+        }
+
+    }
 
     /**
      * 渲染前置执行
@@ -237,9 +249,6 @@ public class FURenderer extends IFURenderer {
      */
     @Override
     public void setInputOrientation(int inputOrientation) {
-        if (cameraOrientationMap.containsKey(inputOrientation)) {
-            setCameraFacing(cameraOrientationMap.get(inputOrientation));
-        }
         super.setInputOrientation(inputOrientation);
     }
 

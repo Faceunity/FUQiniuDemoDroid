@@ -698,15 +698,11 @@ public class AVStreamingActivity extends AppCompatActivity implements
                 @Override
                 public void run() {
                     if (mFURenderer != null) {
-
                         if(facingId == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT){
                             mFURenderer.setCameraFacing(CameraFacingEnum.CAMERA_FRONT);
-                            mFURenderer.setInputOrientation(270);
                         } else if (facingId == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_BACK){
                             mFURenderer.setCameraFacing(CameraFacingEnum.CAMERA_BACK);
-                            mFURenderer.setInputOrientation(90);
                         }
-
                         mFURenderer.release();
                     }
                 }
