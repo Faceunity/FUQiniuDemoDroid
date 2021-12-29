@@ -28,7 +28,7 @@ abstract class IFURenderer {
     protected CameraFacingEnum cameraFacing = CameraFacingEnum.CAMERA_FRONT;  //数据源为相机时候->前后置相机
     protected FUTransformMatrixEnum inputTextureMatrix = FUTransformMatrixEnum.CCROT0_FLIPVERTICAL;//纹理旋转类型
     protected FUTransformMatrixEnum inputBufferMatrix = FUTransformMatrixEnum.CCROT0_FLIPVERTICAL;//图象旋转类型
-
+    protected FUTransformMatrixEnum outputMatrix = FUTransformMatrixEnum.CCROT0;//图象旋转类型
 
     /**
      * 初始化鉴权
@@ -226,5 +226,23 @@ abstract class IFURenderer {
      */
     public void setInputBufferMatrix(FUTransformMatrixEnum inputBufferMatrix) {
         this.inputBufferMatrix = inputBufferMatrix;
+    }
+
+    /**
+     * 获取输出数据旋转类型
+     *
+     * @return
+     */
+    public FUTransformMatrixEnum getOutputMatrix() {
+        return outputMatrix;
+    }
+
+    /**
+     * 设置输出数据旋转类型
+     *
+     * @param outputMatrix
+     */
+    public void setOutputMatrix(FUTransformMatrixEnum outputMatrix) {
+        this.outputMatrix = outputMatrix;
     }
 }

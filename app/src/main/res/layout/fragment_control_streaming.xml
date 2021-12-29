@@ -136,18 +136,27 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="130dp"/>
+        android:layout_marginBottom="30dp"/>
 
     <SeekBar
         android:id="@+id/beauty_level_seekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="100dp"
         android:max="100"
         android:progress="60" />
 
-    <include layout="@layout/camera_button_holder" />
+    <Button
+        android:id="@+id/toggleRecording_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
+        android:scaleType="center"
+        android:layout_gravity="end"
+        android:layout_marginTop="80dp"
+        android:layout_marginEnd="12dp"
+        android:background="@drawable/shutter_button" />
 
     <include
         layout="@layout/audio_mixer"

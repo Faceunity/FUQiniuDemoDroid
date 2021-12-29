@@ -5,9 +5,6 @@
     <string name="camera_dialog_open">Retry</string>
     <string name="camera_dialog_back">quit</string>
 
-    <string name="fuRender_open">FU-open</string>
-    <string name="fuRender_close">FU-close</string>
-
     <string name="home_function_name_beauty">Beautification</string>
     <string name="home_function_name_makeup">Makeup</string>
     <string name="home_function_name_sticker">Sticker</string>
@@ -41,6 +38,7 @@
     <string name="beauty_box_cheekbones">Cheekbone</string>
     <string name="beauty_box_lower_jaw">Jawbone</string>
     <string name="beauty_box_cheek_narrow">CheekNarrow</string>
+    <string name="beauty_box_cheek_short">Cheek short</string>
     <string name="beauty_box_cheek_small">Cheek small</string>
     <string name="beauty_box_intensity_chin">Chin</string>
     <string name="beauty_box_intensity_forehead">Forehead</string>

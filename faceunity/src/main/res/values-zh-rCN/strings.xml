@@ -6,10 +6,6 @@
     <string name="camera_dialog_open">重试</string>
     <string name="camera_dialog_back">退出</string>
 
-    <string name="fuRender_open">FU开启</string>
-    <string name="fuRender_close">FU关闭</string>
-
-
     <string name="home_function_name_beauty">美颜</string>
     <string name="home_function_name_makeup">美妆</string>
     <string name="home_function_name_sticker">贴纸</string>
@@ -41,6 +37,7 @@
     <string name="beauty_box_cheek_thinning">瘦脸</string>
     <string name="beauty_box_cheek_v">V脸</string>
     <string name="beauty_box_cheek_narrow">窄脸</string>
+    <string name="beauty_box_cheek_short">短脸</string>
     <string name="beauty_box_cheek_small">小脸</string>
     <string name="beauty_box_intensity_chin">下巴</string>
     <string name="beauty_box_intensity_forehead">额头</string>
@@ -80,6 +77,9 @@
     <string name="beautify_hip_slim">美臀</string>
     <string name="beautify_head_slim">小头</string>
     <string name="beautify_leg_thin_slim">瘦腿</string>
+
+
+
 
 
 </resources>
