@@ -155,9 +155,6 @@ public class AVStreamingActivity extends AppCompatActivity implements
     private FaceUnityDataFactory mFaceUnityDataFactory;
     private boolean mIsSwitchingCamera;
     private SensorManager mSensorManager;
-    private long mLastClickTime = 0;
-    private byte[] mCameraNv21;
-    private byte[] mReadback;
     private CSVUtils mCSVUtils;
 
 
@@ -494,8 +491,6 @@ public class AVStreamingActivity extends AppCompatActivity implements
                         mControlFragment.bindDataFactory();
                         initCsvUtil(AVStreamingActivity.this);
                     }
-                    mCameraNv21 = null;
-                    mReadback = null;
                 }
 
                 @Override
@@ -521,57 +516,15 @@ public class AVStreamingActivity extends AppCompatActivity implements
 
                     Log.d(TAG, "onSurfaceDrawFrame: " + EGL14.eglGetCurrentContext());
 
-                    if (mFURenderer == null || mIsSwitchingCamera || mCameraNv21 == null) {
+                    if (mFURenderer == null || mIsSwitchingCamera) {
                         return texId;
                     }
-                    if (mReadback == null) {
-                        mReadback = new byte[mCameraNv21.length];
-                    }
-                    //1 双输入 2  单输入 texture  3 单输入 buffer
-                    int inputType = 1;
-                    int fuTexId = texId;
-
                     long start = System.nanoTime();
-
-                    switch (inputType) {
-                        case 1 :
-                            fuTexId = mFURenderer.onDrawFrameDualInput(mCameraNv21, texId, width, height);
-                            break;
-                        case 2:
-                            fuTexId = mFURenderer.onDrawFrameSingleInput(texId, width, height);
-                            break;
-                        case 3:
-                            System.arraycopy(mCameraNv21, 0, mReadback, 0, mCameraNv21.length);
-                            fuTexId = mFURenderer.onDrawFrameSingleInput(mReadback, width, height);
-                            break;
-                    }
+                    int fuTexId = mFURenderer.onDrawFrameSingleInput(texId, width, height);
                     long renderTime = System.nanoTime() - start;
                     Log.d("TestTime", ""+renderTime);
                     mCSVUtils.writeCsv(null, renderTime);
                     return fuTexId;
-                }
-            });
-
-            // for encoding
-            mMediaStreamingManager.setStreamingPreviewCallback(new StreamingPreviewCallback() {
-
-                @Override
-                public boolean onPreviewFrame(byte[] data, int width, int height, int rotation, int fmt, long tsInNanoTime) {
-//                    Log.v(TAG, "onPreviewFrame() called with: data = [" + data + "], width = ["
-//                            + width + "], height = [" + height + "], rotation = [" + rotation
-//                            + "], fmt = [" + fmt + "], tsInNanoTime = [" + tsInNanoTime + "]");
-                    // call on Camera thread
-                    if (mIsSwitchingCamera) {
-                        return true;
-                    }
-                    if (mCameraNv21 == null) {
-                        mCameraNv21 = new byte[data.length];
-                    }
-                    System.arraycopy(data, 0, mCameraNv21, 0, data.length);
-                    if (mReadback != null) {
-                        System.arraycopy(mReadback, 0, data, 0, mReadback.length);
-                    }
-                    return true;
                 }
             });
         } else {
