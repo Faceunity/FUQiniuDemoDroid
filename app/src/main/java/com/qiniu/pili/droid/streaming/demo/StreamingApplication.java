@@ -3,7 +3,9 @@ package com.qiniu.pili.droid.streaming.demo;
 import android.app.Application;
 import android.content.Intent;
 
+import com.faceunity.FUConfig;
 import com.faceunity.nama.FURenderer;
+import com.faceunity.nama.utils.FuDeviceUtils;
 import com.qiniu.pili.droid.streaming.StreamingEnv;
 import com.qiniu.pili.droid.streaming.demo.service.KeepAppAliveService;
 import com.qiniu.pili.droid.streaming.demo.utils.AppStateTracker;
@@ -22,6 +24,7 @@ public class StreamingApplication extends Application {
          * init must be called before any other func
          */
         StreamingEnv.init(getApplicationContext());
+        FUConfig.DEVICE_LEVEL = FuDeviceUtils.judgeDeviceLevel(this);
         FURenderer.getInstance().setup(getApplicationContext());
 
         /**
