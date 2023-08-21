@@ -31,9 +31,4 @@
         <attr name="civ_border_overlay" format="boolean" />
         <attr name="civ_circle_background_color" format="color" />
     </declare-styleable>
-
-    <declare-styleable name="xfermode_radio_btn">
-        <attr name="text_xfermode" format="string" />
-        <attr name="text_size_xfermode" format="dimension" />
-    </declare-styleable>
 </resources>

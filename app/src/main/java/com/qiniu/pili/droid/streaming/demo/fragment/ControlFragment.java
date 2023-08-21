@@ -56,7 +56,7 @@ public class ControlFragment extends Fragment {
     private FaceUnityView mFaceUnityView;
     private TextView mTvFPS;
 
-    private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(0);;
+    private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(-1);;
 
     private boolean mIsHwVideoEncodeType = false;
     private boolean mShutterButtonPressed = false;

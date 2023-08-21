@@ -1,19 +1,22 @@
 package com.faceunity.nama.data;
 
 import com.faceunity.core.enumeration.FUAIProcessorEnum;
+import com.faceunity.core.faceunity.FUAIKit;
 import com.faceunity.core.faceunity.FURenderKit;
+import com.faceunity.nama.FUConfig;
 import com.faceunity.nama.FURenderer;
+import com.faceunity.nama.utils.FuDeviceUtils;
 
 /**
  * DESC：
  * Created on 2021/4/25
+ * 下标 0美肤、1美型、2滤镜、3贴纸、4美妆、5美体
  */
 public class FaceUnityDataFactory {
-
     /**
      * 道具数据工厂
      */
-    public FaceBeautyDataFactory mFaceBeautyDataFactory;
+    public FaceBeautyAndFilterDataFactory mFaceBeautyAndFilterDataFactory;//美颜或者滤镜
     public BodyBeautyDataFactory mBodyBeautyDataFactory;
     public MakeupDataFactory mMakeupDataFactory;
     public PropDataFactory mPropDataFactory;
@@ -26,7 +29,7 @@ public class FaceUnityDataFactory {
      * 道具加载标识
      */
     public int currentFunctionIndex;
-    private boolean hasFaceBeautyLoaded = false;
+    private boolean hasFaceBeautyOrFilterLoaded = false;
     private boolean hasBodyBeautyLoaded = false;
     private boolean hasMakeupLoaded = false;
     private boolean hasPropLoaded = false;
@@ -34,7 +37,7 @@ public class FaceUnityDataFactory {
 
     public FaceUnityDataFactory(int index) {
         currentFunctionIndex = index;
-        mFaceBeautyDataFactory = new FaceBeautyDataFactory();
+        mFaceBeautyAndFilterDataFactory = new FaceBeautyAndFilterDataFactory();
         mBodyBeautyDataFactory = new BodyBeautyDataFactory();
         mMakeupDataFactory = new MakeupDataFactory(0);
         mPropDataFactory = new PropDataFactory(0);
@@ -44,38 +47,55 @@ public class FaceUnityDataFactory {
      * FURenderKit加载当前特效
      */
     public void bindCurrentRenderer() {
+        bindCurrentRenderer(true);
+    }
+
+    /**
+     * FURenderKit加载当前特效
+     */
+    public void bindCurrentRenderer(boolean needBindFaceBeauty) {
+        hasFaceBeautyOrFilterLoaded = needBindFaceBeauty;
+        //高端机开启小脸检测
+        FUAIKit.getInstance().faceProcessorSetFaceLandmarkQuality(FUConfig.DEVICE_LEVEL);
+        if (FUConfig.DEVICE_LEVEL  > FuDeviceUtils.DEVICE_LEVEL_MID)
+            FUAIKit.getInstance().fuFaceProcessorSetDetectSmallFace(true);
+        //选中哪一项加载哪一项道具
         switch (currentFunctionIndex) {
-            case 0:
-                mFaceBeautyDataFactory.bindCurrentRenderer();
-                hasFaceBeautyLoaded = true;
+            case 0://美肤
+            case 1://美型
+            case 2://滤镜
+                mFaceBeautyAndFilterDataFactory.bindCurrentRenderer();
+                hasFaceBeautyOrFilterLoaded = true;
                 break;
-            case 1:
+            case 3:
                 mPropDataFactory.bindCurrentRenderer();
                 hasPropLoaded = true;
                 break;
 
-            case 2:
+            case 4:
                 mMakeupDataFactory.bindCurrentRenderer();
                 hasMakeupLoaded = true;
                 break;
-            case 3:
+            case 5:
                 mBodyBeautyDataFactory.bindCurrentRenderer();
                 hasBodyBeautyLoaded = true;
                 break;
         }
-        if (hasFaceBeautyLoaded && currentFunctionIndex != 0) {
-            mFaceBeautyDataFactory.bindCurrentRenderer();
+        //补充没有选中某项但是需要做效果则靠下面这个逻辑
+        if (hasFaceBeautyOrFilterLoaded && (currentFunctionIndex != 0 || currentFunctionIndex != 1 ||currentFunctionIndex != 2)) {
+            mFaceBeautyAndFilterDataFactory.bindCurrentRenderer();
         }
-        if (hasPropLoaded && currentFunctionIndex != 1) {
+        if (hasPropLoaded && currentFunctionIndex != 3) {
             mPropDataFactory.bindCurrentRenderer();
         }
-        if (hasMakeupLoaded && currentFunctionIndex != 2) {
+        if (hasMakeupLoaded && currentFunctionIndex != 4) {
             mMakeupDataFactory.bindCurrentRenderer();
         }
-        if (hasBodyBeautyLoaded && currentFunctionIndex != 3) {
+        if (hasBodyBeautyLoaded && currentFunctionIndex != 5) {
             mBodyBeautyDataFactory.bindCurrentRenderer();
         }
-        if (currentFunctionIndex == 3) {
+
+        if (currentFunctionIndex == 5) {
             mFURenderKit.getFUAIController().setMaxFaces(1);
             mFURenderer.setAIProcessTrackType(FUAIProcessorEnum.HUMAN_PROCESSOR);
         } else {
@@ -90,15 +110,17 @@ public class FaceUnityDataFactory {
     public void onFunctionSelected(int index) {
         currentFunctionIndex = index;
         switch (index) {
-            case 0:
-                if (!hasFaceBeautyLoaded) {
-                    mFaceBeautyDataFactory.bindCurrentRenderer();
-                    hasFaceBeautyLoaded = true;
+            case 0://美肤
+            case 1://美型
+            case 2://滤镜
+                if (!hasFaceBeautyOrFilterLoaded) {
+                    mFaceBeautyAndFilterDataFactory.bindCurrentRenderer();
+                    hasFaceBeautyOrFilterLoaded = true;
                 }
                 mFURenderKit.getFUAIController().setMaxFaces(4);
                 mFURenderer.setAIProcessTrackType(FUAIProcessorEnum.FACE_PROCESSOR);
                 break;
-            case 1:
+            case 3://贴纸
                 if (!hasPropLoaded) {
                     mPropDataFactory.bindCurrentRenderer();
                     hasPropLoaded = true;
@@ -106,7 +128,7 @@ public class FaceUnityDataFactory {
                 mFURenderKit.getFUAIController().setMaxFaces(4);
                 mFURenderer.setAIProcessTrackType(FUAIProcessorEnum.FACE_PROCESSOR);
                 break;
-            case 2:
+            case 4://美妆
                 if (!hasMakeupLoaded) {
                     mMakeupDataFactory.bindCurrentRenderer();
                     hasMakeupLoaded = true;
@@ -114,7 +136,7 @@ public class FaceUnityDataFactory {
                 mFURenderKit.getFUAIController().setMaxFaces(4);
                 mFURenderer.setAIProcessTrackType(FUAIProcessorEnum.FACE_PROCESSOR);
                 break;
-            case 3:
+            case 5://美体
                 if (!hasBodyBeautyLoaded) {
                     mBodyBeautyDataFactory.bindCurrentRenderer();
                     hasBodyBeautyLoaded = true;

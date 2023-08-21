@@ -47,11 +47,4 @@ public abstract class AbstractMakeupDataFactory {
      */
     public abstract void updateCombinationIntensity(double intensity);
 
-    /**
-     * 美妆开关
-     *
-     * @param enable Boolean
-     */
-    public abstract void enableMakeup(boolean enable);
-
 }

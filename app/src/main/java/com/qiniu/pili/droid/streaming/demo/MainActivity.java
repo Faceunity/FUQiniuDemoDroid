@@ -70,7 +70,6 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         // 开启日志的本地保存，保存在应用私有目录(getExternalFilesDir) 或者 getFilesDir 文件目录下的 Pili 文件夹中
         StreamingEnv.setLogLevel(Log.INFO);
-        StreamingEnv.startLogFile();
 
         TextView versionInfo = (TextView) findViewById(R.id.version_info);
         mInputTextTV = (TextView) findViewById(R.id.input_url);
@@ -92,7 +91,6 @@ public class MainActivity extends FragmentActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        StreamingEnv.stopLogFile();
         Log.i(TAG, "Log file path : " + StreamingEnv.getLogFilePath());
     }
 
