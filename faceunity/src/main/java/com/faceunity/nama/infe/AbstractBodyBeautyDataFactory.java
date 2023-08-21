@@ -15,15 +15,14 @@ public abstract class AbstractBodyBeautyDataFactory {
 
     /**
      * 获取美体参数集合
-     *
      * @return
      */
     public abstract ArrayList<BodyBeautyBean> getBodyBeautyParam();
 
 
+
     /**
      * 获取美体项目数据扩展模型
-     *
      * @return
      */
     public abstract HashMap<String, ModelAttributeData> getModelAttributeRange();

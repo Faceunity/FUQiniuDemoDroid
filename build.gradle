@@ -15,7 +15,7 @@ buildscript {
 
 allprojects {
     repositories {
-        maven { url 'http://maven.faceunity.com/repository/maven-public/' }
+        maven { url 'https://maven.faceunity.com/repository/maven-public/' }
         jcenter()
         google()
     }

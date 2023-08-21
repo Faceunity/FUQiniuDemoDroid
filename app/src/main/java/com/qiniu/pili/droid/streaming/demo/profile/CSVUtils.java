@@ -132,6 +132,7 @@ public class CSVUtils {
 
     public void close() {
         Log.d(TAG, "close: ");
+        if (mHandler == null) return;
         mHandler.post(new Runnable() {
             @Override
             public void run() {

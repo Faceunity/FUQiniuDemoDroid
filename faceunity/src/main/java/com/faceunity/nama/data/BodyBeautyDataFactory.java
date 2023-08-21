@@ -105,10 +105,8 @@ public class BodyBeautyDataFactory extends AbstractBodyBeautyDataFactory {
      */
     @Override
     public void enableBodyBeauty(boolean enable) {
-        if (enable) {
-            mFURenderKit.setBodyBeauty(bodyBeauty);
-        } else {
-            mFURenderKit.setBodyBeauty(null);
+        if (mFURenderKit.getBodyBeauty() != null) {
+            mFURenderKit.getBodyBeauty().setEnable(enable);
         }
     }
 

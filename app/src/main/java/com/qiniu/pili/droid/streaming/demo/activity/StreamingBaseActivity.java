@@ -15,9 +15,7 @@ import android.widget.TextView;
 import com.qiniu.android.dns.DnsManager;
 import com.qiniu.android.dns.IResolver;
 import com.qiniu.android.dns.NetworkInfo;
-import com.qiniu.android.dns.http.DnspodFree;
 import com.qiniu.android.dns.local.AndroidDnsServer;
-import com.qiniu.android.dns.local.Resolver;
 import com.qiniu.pili.droid.streaming.AudioSourceCallback;
 import com.qiniu.pili.droid.streaming.StreamStatusCallback;
 import com.qiniu.pili.droid.streaming.StreamingProfile;
@@ -26,6 +24,7 @@ import com.qiniu.pili.droid.streaming.StreamingState;
 import com.qiniu.pili.droid.streaming.StreamingStateChangedListener;
 import com.qiniu.pili.droid.streaming.demo.R;
 import com.qiniu.pili.droid.streaming.demo.plain.EncodingConfig;
+import com.qiniu.pili.droid.streaming.demo.utils.Util;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -348,24 +347,8 @@ public abstract class StreamingBaseActivity extends FragmentActivity implements
             mProfile.setAVProfile(avProfile);
         }
 
-        mProfile.setDnsManager(getMyDnsManager(this))
+        mProfile.setDnsManager(Util.getMyDnsManager())
                 .setStreamStatusConfig(new StreamingProfile.StreamStatusConfig(3))
                 .setSendingBufferProfile(new StreamingProfile.SendingBufferProfile(0.2f, 0.8f, 3.0f, 20 * 1000));
-    }
-
-    /**
-     * If you want to use a custom DNS server, config it
-     * Not required.
-     */
-    private static DnsManager getMyDnsManager(Context context) {
-        IResolver r0 = null;
-        IResolver r1 = new DnspodFree();
-        IResolver r2 = AndroidDnsServer.defaultResolver(context);
-        try {
-            r0 = new Resolver(InetAddress.getByName("119.29.29.29"));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-        return new DnsManager(NetworkInfo.normal, new IResolver[]{r0, r1, r2});
     }
 }

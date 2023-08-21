@@ -34,14 +34,15 @@ import android.widget.Toast;
 
 import com.faceunity.core.enumeration.CameraFacingEnum;
 import com.faceunity.core.enumeration.FUAIProcessorEnum;
-import com.faceunity.core.enumeration.FUTransformMatrixEnum;
-import com.faceunity.core.utils.CameraUtils;
+import com.faceunity.core.faceunity.FUAIKit;
+import com.faceunity.core.faceunity.FURenderKit;
+import com.faceunity.core.model.facebeauty.FaceBeautyBlurTypeEnum;
+import com.faceunity.nama.FUConfig;
 import com.faceunity.nama.FURenderer;
-import com.faceunity.nama.data.FaceBeautyDataFactory;
 import com.faceunity.nama.data.FaceUnityDataFactory;
 import com.faceunity.nama.listener.FURendererListener;
-import com.faceunity.nama.ui.FaceUnityView;
 
+import com.faceunity.nama.utils.FuDeviceUtils;
 import com.github.angads25.filepicker.controller.DialogSelectionListener;
 import com.github.angads25.filepicker.model.DialogConfigs;
 import com.github.angads25.filepicker.model.DialogProperties;
@@ -151,7 +152,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
     private int mTimes = 0;
     private boolean mIsPictureStreaming = false;
 
-    private FURenderer mFURenderer = FURenderer.getInstance();
+    private FURenderer mFURenderer;
     private FaceUnityDataFactory mFaceUnityDataFactory;
     private boolean mIsSwitchingCamera;
     private SensorManager mSensorManager;
@@ -365,7 +366,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
         }
 
         // 其他配置项
-        mProfile.setDnsManager(Util.getMyDnsManager(this))
+        mProfile.setDnsManager(Util.getMyDnsManager())
                 .setStreamStatusConfig(new StreamingProfile.StreamStatusConfig(3))
                 .setSendingBufferProfile(new StreamingProfile.SendingBufferProfile(0.2f, 0.8f, 3.0f, 20 * 1000));
     }
@@ -439,7 +440,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
         mMediaStreamingManager.setStreamStatusCallback(mStreamStatusCallback);
         mMediaStreamingManager.setAudioSourceCallback(mAudioSourceCallback);
         mMediaStreamingManager.setStreamingStateListener(mStreamingStateChangedListener);
-        mMediaStreamingManager.setStreamingPreviewCallback(mStreamingPreviewCallback);
+//        mMediaStreamingManager.setStreamingPreviewCallback(mStreamingPreviewCallback);
         if (mCameraConfig.mIsCustomFaceBeauty) {
             mMediaStreamingManager.setSurfaceTextureCallback(mSurfaceTextureCallback);
         }
@@ -475,6 +476,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
         String isOpen = PreferenceUtil.getString(StreamingApplication.getInstance(), PreferenceUtil.KEY_FACEUNITY_ISON);
         if (mCameraConfig.mIsCustomFaceBeauty) {
             if ("true".equals(isOpen)) {
+                mFURenderer = FURenderer.getInstance();
                 mControlFragment.setModuleManager();
                 mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
             } else {
@@ -483,6 +485,24 @@ public class AVStreamingActivity extends AppCompatActivity implements
 
             // for preview
             mMediaStreamingManager.setSurfaceTextureCallback(new SurfaceTextureCallback() {
+
+                private void cheekFaceNum() {
+                    //根据有无人脸 + 设备性能 判断开启的磨皮类型
+                    float faceProcessorGetConfidenceScore = FUAIKit.getInstance().getFaceProcessorGetConfidenceScore(0);
+                    if (faceProcessorGetConfidenceScore >= 0.95) {
+                        //高端手机并且检测到人脸开启均匀磨皮，人脸点位质
+                        if (FURenderKit.getInstance().getFaceBeauty() != null && FURenderKit.getInstance().getFaceBeauty().getBlurType() != FaceBeautyBlurTypeEnum.EquallySkin) {
+                            FURenderKit.getInstance().getFaceBeauty().setBlurType(FaceBeautyBlurTypeEnum.EquallySkin);
+                            FURenderKit.getInstance().getFaceBeauty().setEnableBlurUseMask(true);
+                        }
+                    } else {
+                        if (FURenderKit.getInstance().getFaceBeauty() != null && FURenderKit.getInstance().getFaceBeauty().getBlurType() != FaceBeautyBlurTypeEnum.FineSkin) {
+                            FURenderKit.getInstance().getFaceBeauty().setBlurType(FaceBeautyBlurTypeEnum.FineSkin);
+                            FURenderKit.getInstance().getFaceBeauty().setEnableBlurUseMask(false);
+                        }
+                    }
+                }
+
                 @Override
                 public void onSurfaceCreated() {
                     Log.d(TAG, "onSurfaceCreated: ");
@@ -503,7 +523,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
                     Log.d(TAG, "onSurfaceDestroyed: ");
                     if (mFURenderer != null) {
                         mFURenderer.release();
-                        mCSVUtils.close();
+//                        mCSVUtils.close();
                     }
                 }
 
@@ -518,6 +538,9 @@ public class AVStreamingActivity extends AppCompatActivity implements
 
                     if (mFURenderer == null || mIsSwitchingCamera) {
                         return texId;
+                    }
+                    if (FUConfig.DEVICE_LEVEL > FuDeviceUtils.DEVICE_LEVEL_MID) {
+                        cheekFaceNum();
                     }
                     long start = System.nanoTime();
                     int fuTexId = mFURenderer.onDrawFrameSingleInput(texId, width, height);
@@ -635,7 +658,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
         if (isPictureStreaming()) {
             return;
         }
-        mCurrentCamFacingIndex = (mCurrentCamFacingIndex + 1) % CameraStreamingSetting.getNumberOfCameras();
+        mCurrentCamFacingIndex = CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_FRONT.ordinal() - mCurrentCamFacingIndex;
         final CameraStreamingSetting.CAMERA_FACING_ID facingId;
         if (mCurrentCamFacingIndex == CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_BACK.ordinal()) {
             facingId = CameraStreamingSetting.CAMERA_FACING_ID.CAMERA_FACING_BACK;
