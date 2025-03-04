@@ -442,7 +442,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
         mMediaStreamingManager.setStreamingStateListener(mStreamingStateChangedListener);
 //        mMediaStreamingManager.setStreamingPreviewCallback(mStreamingPreviewCallback);
         if (mCameraConfig.mIsCustomFaceBeauty) {
-            mMediaStreamingManager.setSurfaceTextureCallback(mSurfaceTextureCallback);
+//            mMediaStreamingManager.setSurfaceTextureCallback(mSurfaceTextureCallback);
         }
 
         mAudioMixer = mMediaStreamingManager.getAudioMixer();
@@ -506,6 +506,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
                 @Override
                 public void onSurfaceCreated() {
                     Log.d(TAG, "onSurfaceCreated: ");
+                    FURenderKit.getInstance().releaseSafe();
                     if (mFURenderer != null) {
                         mFURenderer.setBeautyOn();
                         mControlFragment.bindDataFactory();
