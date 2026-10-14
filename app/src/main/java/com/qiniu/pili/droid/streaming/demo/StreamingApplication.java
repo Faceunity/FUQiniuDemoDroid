@@ -24,7 +24,7 @@ public class StreamingApplication extends Application {
          * init must be called before any other func
          */
         StreamingEnv.init(getApplicationContext());
-        FUConfig.DEVICE_LEVEL = FuDeviceUtils.judgeDeviceLevelGPU();
+        FUConfig.DEVICE_LEVEL = FuDeviceUtils.judgeDeviceLevel();
         FURenderer.getInstance().setup(getApplicationContext());
 
         /**

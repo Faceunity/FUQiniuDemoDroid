@@ -22,13 +22,14 @@ abstract class IFURenderer {
      */
     protected FUExternalInputEnum externalInputType = FUExternalInputEnum.EXTERNAL_INPUT_TYPE_CAMERA;//数据源类型
     protected FUInputTextureEnum inputTextureType = FUInputTextureEnum.FU_ADM_FLAG_EXTERNAL_OES_TEXTURE;//纹理类型
-    protected FUInputBufferEnum inputBufferType = FUInputBufferEnum.FU_FORMAT_NV21_BUFFER;//数据类型
+    protected FUInputBufferEnum inputBufferType = FUInputBufferEnum.FU_FORMAT_I420_BUFFER;//数据类型
     protected int inputOrientation = 270;//数据源朝向
-    protected int deviceOrientation = 0;//手机设备朝向
+    protected int deviceOrientation = 90;//手机设备朝向
     protected CameraFacingEnum cameraFacing = CameraFacingEnum.CAMERA_FRONT;  //数据源为相机时候->前后置相机
     protected FUTransformMatrixEnum inputTextureMatrix = FUTransformMatrixEnum.CCROT0_FLIPVERTICAL;//纹理旋转类型
     protected FUTransformMatrixEnum inputBufferMatrix = FUTransformMatrixEnum.CCROT0_FLIPVERTICAL;//图象旋转类型
     protected FUTransformMatrixEnum outputMatrix = FUTransformMatrixEnum.CCROT0;//图象旋转类型
+
 
     /**
      * 初始化鉴权
