@@ -41,6 +41,23 @@ public class FaceBeautyAndFilterDataFactory extends AbstractFaceBeautyDataFactor
         double getValue();
     }
 
+    interface FaceBeautySetParamRelevanceInterface {
+        /**
+         * 设置属性值
+         *
+         * @param value
+         */
+        void setValue(boolean value);
+    }
+
+    interface FaceBeautyGetParamRelevanceInterface {
+        /**
+         * 获取属性值
+         */
+        boolean getValue();
+    }
+
+
     /*渲染控制器*/
     private FURenderKit mFURenderKit = FURenderKit.getInstance();
 
@@ -164,6 +181,21 @@ public class FaceBeautyAndFilterDataFactory extends AbstractFaceBeautyDataFactor
         }
     }
 
+    @Override
+    public int getParamRelevanceSelectedType(@NonNull String key) {
+        if (faceBeautyRelevanceGetMapping != null && faceBeautyRelevanceGetMapping.containsKey(key)) {
+            return faceBeautyRelevanceGetMapping.get(key).getValue() ? 1 : 0;
+        }
+        return 0;
+    }
+
+    @Override
+    public void updateParamRelevanceType(@NonNull String key, int type) {
+        if (faceBeautyRelevanceSetMapping.containsKey(key)) {
+            faceBeautyRelevanceSetMapping.get(key).setValue(type == 1);
+        }
+    }
+
     /**
      * 切换滤镜
      *
@@ -194,12 +226,16 @@ public class FaceBeautyAndFilterDataFactory extends AbstractFaceBeautyDataFactor
         put(FaceBeautyParam.BLUR_INTENSITY, defaultFaceBeauty::setBlurIntensity);
         put(FaceBeautyParam.RED_INTENSITY, defaultFaceBeauty::setRedIntensity);
         put(FaceBeautyParam.SHARPEN_INTENSITY, defaultFaceBeauty::setSharpenIntensity);
+        put(FaceBeautyParam.BODY_BLUR_INTENSITY, defaultFaceBeauty::setBodyBlurIntensity);
         put(FaceBeautyParam.EYE_BRIGHT_INTENSITY, defaultFaceBeauty::setEyeBrightIntensity);
         put(FaceBeautyParam.TOOTH_WHITEN_INTENSITY, defaultFaceBeauty::setToothIntensity);
         put(FaceBeautyParam.REMOVE_POUCH_INTENSITY, defaultFaceBeauty::setRemovePouchIntensity);
         put(FaceBeautyParam.REMOVE_NASOLABIAL_FOLDS_INTENSITY, defaultFaceBeauty::setRemoveLawPatternIntensity);
+        put(FaceBeautyParam.CLARITY, defaultFaceBeauty::setClarityIntensity);
+        put(FaceBeautyParam.DELSPOT, defaultFaceBeauty::setDelspotIntensity);
+        put(FaceBeautyParam.FACIAL_PLUMPING, defaultFaceBeauty::setFacialPlumpingIntensity);
         /*美型*/
-        put(FaceBeautyParam.FACE_SHAPE_INTENSITY, defaultFaceBeauty::setFaceShapeIntensity);
+        put(FaceBeautyParam.FACE_SHAPE_INTENSITY, defaultFaceBeauty::setSharpenIntensity);
         put(FaceBeautyParam.CHEEK_THINNING_INTENSITY, defaultFaceBeauty::setCheekThinningIntensity);
         put(FaceBeautyParam.CHEEK_V_INTENSITY, defaultFaceBeauty::setCheekVIntensity);
         put(FaceBeautyParam.CHEEK_LONG_INTENSITY, defaultFaceBeauty::setCheekLongIntensity);
@@ -217,6 +253,7 @@ public class FaceBeautyAndFilterDataFactory extends AbstractFaceBeautyDataFactor
         put(FaceBeautyParam.INTENSITY_EYE_HEIGHT, defaultFaceBeauty::setEyeHeightIntensity);
         put(FaceBeautyParam.INTENSITY_BROW_THICK, defaultFaceBeauty::setBrowThickIntensity);
         put(FaceBeautyParam.INTENSITY_LIP_THICK, defaultFaceBeauty::setLipThickIntensity);
+        put(FaceBeautyParam.EYE_PUPIL_INTENSITY, defaultFaceBeauty::setEyePupilIntensity);
         put(FaceBeautyParam.FACE_THREED, defaultFaceBeauty::setFaceThreeIntensity);
         put(FaceBeautyParam.CHIN_INTENSITY, defaultFaceBeauty::setChinIntensity);
         put(FaceBeautyParam.FOREHEAD_INTENSITY, defaultFaceBeauty::setForHeadIntensity);
@@ -228,6 +265,11 @@ public class FaceBeautyAndFilterDataFactory extends AbstractFaceBeautyDataFactor
         put(FaceBeautyParam.LONG_NOSE_INTENSITY, defaultFaceBeauty::setLongNoseIntensity);
         put(FaceBeautyParam.PHILTRUM_INTENSITY, defaultFaceBeauty::setPhiltrumIntensity);
         put(FaceBeautyParam.SMILE_INTENSITY, defaultFaceBeauty::setSmileIntensity);
+        put(FaceBeautyParam.INTENSITY_FACE_LIFT_INTENSITY, defaultFaceBeauty::setFaceLiftIntensity);
+        put(FaceBeautyParam.INTENSITY_SMALL_HEAD_INTENSITY, defaultFaceBeauty::setSmallHeadIntensity);
+        put(FaceBeautyParam.EYE_OUTTER_INTENSITY, defaultFaceBeauty::setEyeOutterIntensity);
+        put(FaceBeautyParam.MOUTH_WIDTH_INTENSITY, defaultFaceBeauty::setMouthWidthIntensity);
+        put(FaceBeautyParam.NOSE_ALAR_INTENSITY, defaultFaceBeauty::setNoseAlarIntensity);
     }};
 
     /*模型映射获取模型值*/
@@ -237,12 +279,16 @@ public class FaceBeautyAndFilterDataFactory extends AbstractFaceBeautyDataFactor
             put(FaceBeautyParam.BLUR_INTENSITY, defaultFaceBeauty::getBlurIntensity);
             put(FaceBeautyParam.RED_INTENSITY, defaultFaceBeauty::getRedIntensity);
             put(FaceBeautyParam.SHARPEN_INTENSITY, defaultFaceBeauty::getSharpenIntensity);
+            put(FaceBeautyParam.BODY_BLUR_INTENSITY, defaultFaceBeauty::getBodyBlurIntensity);
             put(FaceBeautyParam.EYE_BRIGHT_INTENSITY, defaultFaceBeauty::getEyeBrightIntensity);
             put(FaceBeautyParam.TOOTH_WHITEN_INTENSITY, defaultFaceBeauty::getToothIntensity);
             put(FaceBeautyParam.REMOVE_POUCH_INTENSITY, defaultFaceBeauty::getRemovePouchIntensity);
             put(FaceBeautyParam.REMOVE_NASOLABIAL_FOLDS_INTENSITY, defaultFaceBeauty::getRemoveLawPatternIntensity);
+            put(FaceBeautyParam.CLARITY, defaultFaceBeauty::getClarityIntensity);
+            put(FaceBeautyParam.DELSPOT, defaultFaceBeauty::getDelspotIntensity);
+            put(FaceBeautyParam.FACIAL_PLUMPING, defaultFaceBeauty::getFacialPlumpingIntensity);
             /*美型*/
-            put(FaceBeautyParam.FACE_SHAPE_INTENSITY, defaultFaceBeauty::getFaceShapeIntensity);
+            put(FaceBeautyParam.FACE_SHAPE_INTENSITY, defaultFaceBeauty::getSharpenIntensity);
             put(FaceBeautyParam.CHEEK_THINNING_INTENSITY, defaultFaceBeauty::getCheekThinningIntensity);
             put(FaceBeautyParam.CHEEK_V_INTENSITY, defaultFaceBeauty::getCheekVIntensity);
             put(FaceBeautyParam.CHEEK_LONG_INTENSITY, defaultFaceBeauty::getCheekLongIntensity);
@@ -253,6 +299,7 @@ public class FaceBeautyAndFilterDataFactory extends AbstractFaceBeautyDataFactor
             put(FaceBeautyParam.INTENSITY_CHEEKBONES_INTENSITY, defaultFaceBeauty::getCheekBonesIntensity);
             put(FaceBeautyParam.INTENSITY_LOW_JAW_INTENSITY, defaultFaceBeauty::getLowerJawIntensity);
             put(FaceBeautyParam.EYE_ENLARGING_INTENSITY, defaultFaceBeauty::getEyeEnlargingIntensity);
+            put(FaceBeautyParam.EYE_PUPIL_INTENSITY, defaultFaceBeauty::getEyePupilIntensity);
             put(FaceBeautyParam.EYE_CIRCLE_INTENSITY, defaultFaceBeauty::getEyeCircleIntensity);
             put(FaceBeautyParam.BROW_HEIGHT_INTENSITY, defaultFaceBeauty::getBrowHeightIntensity);
             put(FaceBeautyParam.BROW_SPACE_INTENSITY, defaultFaceBeauty::getBrowSpaceIntensity);
@@ -271,6 +318,24 @@ public class FaceBeautyAndFilterDataFactory extends AbstractFaceBeautyDataFactor
             put(FaceBeautyParam.LONG_NOSE_INTENSITY, defaultFaceBeauty::getLongNoseIntensity);
             put(FaceBeautyParam.PHILTRUM_INTENSITY, defaultFaceBeauty::getPhiltrumIntensity);
             put(FaceBeautyParam.SMILE_INTENSITY, defaultFaceBeauty::getSmileIntensity);
+            put(FaceBeautyParam.INTENSITY_FACE_LIFT_INTENSITY, defaultFaceBeauty::getFaceLiftIntensity);
+            put(FaceBeautyParam.INTENSITY_SMALL_HEAD_INTENSITY, defaultFaceBeauty::getSmallHeadIntensity);
+            put(FaceBeautyParam.EYE_OUTTER_INTENSITY, defaultFaceBeauty::getEyeOutterIntensity);
+            put(FaceBeautyParam.MOUTH_WIDTH_INTENSITY, defaultFaceBeauty::getMouthWidthIntensity);
+            put(FaceBeautyParam.NOSE_ALAR_INTENSITY, defaultFaceBeauty::getNoseAlarIntensity);
+        }
+    };
+
+    /*模型映射获取模型值*/
+    HashMap<String, FaceBeautyGetParamRelevanceInterface> faceBeautyRelevanceGetMapping = new HashMap<String, FaceBeautyGetParamRelevanceInterface>() {
+        {
+            put(FaceBeautyParam.ENABLE_SKIN_SEG, defaultFaceBeauty::getEnableSkinSeg);
+        }
+    };
+
+    HashMap<String, FaceBeautySetParamRelevanceInterface> faceBeautyRelevanceSetMapping = new HashMap<String, FaceBeautySetParamRelevanceInterface>() {
+        {
+            put(FaceBeautyParam.ENABLE_SKIN_SEG, defaultFaceBeauty::setEnableSkinSeg);
         }
     };
 

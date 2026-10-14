@@ -540,7 +540,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
                     if (mFURenderer == null || mIsSwitchingCamera) {
                         return texId;
                     }
-                    if (FUConfig.DEVICE_LEVEL > FuDeviceUtils.DEVICE_LEVEL_MID) {
+                    if (FUConfig.DEVICE_LEVEL > FuDeviceUtils.DEVICE_LEVEL_TWO) {
                         cheekFaceNum();
                     }
                     long start = System.nanoTime();
