@@ -510,7 +510,7 @@ public class FaceBeautySource {
         params.put(FaceBeautyParam.COLOR_INTENSITY, new ModelAttributeData(0.4, 0.0, 0.0, 1.0));
         params.put(FaceBeautyParam.ENABLE_SKIN_SEG, new ModelAttributeData(0.0, 0.0, 0.0, 1.0));
         params.put(FaceBeautyParam.BLUR_INTENSITY, new ModelAttributeData(3.3, 0.0, 0.0, 6.0));
-        params.put(FaceBeautyParam.BODY_BLUR_INTENSITY, new ModelAttributeData(0.0, 0.0, 0.0, 6.0));
+        params.put(FaceBeautyParam.BODY_BLUR_INTENSITY, new ModelAttributeData(3.3, 0.0, 0.0, 6.0));
         params.put(FaceBeautyParam.RED_INTENSITY, new ModelAttributeData(0.3, 0.0, 0.0, 1.0));
         params.put(FaceBeautyParam.SHARPEN_INTENSITY, new ModelAttributeData(0.6, 0.0, 0.0, 1.0));
         params.put(FaceBeautyParam.EYE_BRIGHT_INTENSITY, new ModelAttributeData(0.3, 0.0, 0.0, 1.0));
@@ -583,7 +583,7 @@ public class FaceBeautySource {
         params.put(FaceBeautyParam.COLOR_INTENSITY, new ModelAttributeData(0.0, 0.0, 0.0, 1.0));
         params.put(FaceBeautyParam.ENABLE_SKIN_SEG, new ModelAttributeData(0.0, 0.0, 0.0, 1.0));
         params.put(FaceBeautyParam.BLUR_INTENSITY, new ModelAttributeData(3.6, 0.0, 0.0, 6.0));
-        params.put(FaceBeautyParam.BODY_BLUR_INTENSITY, new ModelAttributeData(0.0, 0.0, 0.0, 6.0));
+        params.put(FaceBeautyParam.BODY_BLUR_INTENSITY, new ModelAttributeData(3.6, 0.0, 0.0, 6.0));
         params.put(FaceBeautyParam.RED_INTENSITY, new ModelAttributeData(0.0, 0.0, 0.0, 1.0));
         params.put(FaceBeautyParam.SHARPEN_INTENSITY, new ModelAttributeData(0.0, 0.0, 0.0, 1.0));
         params.put(FaceBeautyParam.EYE_BRIGHT_INTENSITY, new ModelAttributeData(0.0, 0.0, 0.0, 1.0));

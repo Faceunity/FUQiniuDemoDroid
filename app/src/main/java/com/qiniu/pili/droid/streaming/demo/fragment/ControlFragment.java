@@ -21,8 +21,10 @@ import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.faceunity.core.enumeration.FUAIProcessorEnum;
 import com.faceunity.nama.FURenderer;
 import com.faceunity.nama.data.FaceUnityDataFactory;
+import com.faceunity.nama.listener.FURendererListener;
 import com.faceunity.nama.ui.FaceUnityView;
 import com.qiniu.pili.droid.streaming.demo.R;
 
@@ -55,6 +57,8 @@ public class ControlFragment extends Fragment {
     private ImageView mPicStreamingImageView;
     private FaceUnityView mFaceUnityView;
     private TextView mTvFPS;
+    private TextView mTrackingText;
+    private FURenderer mFURenderer = FURenderer.getInstance();
 
     private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(-1);;
 
@@ -105,8 +109,29 @@ public class ControlFragment extends Fragment {
     }
 
     public void bindDataFactory(){
+        mFURenderer.bindListener(mFURendererListener);
         mFaceUnityDataFactory.bindCurrentRenderer();
     }
+
+    /**
+     * FURenderer状态回调
+     */
+    private FURendererListener mFURendererListener = new FURendererListener() {
+
+
+        @Override
+        public void onTrackStatusChanged(FUAIProcessorEnum type, int status) {
+            getActivity().runOnUiThread(() -> {
+                mTrackingText.setText(type == FUAIProcessorEnum.FACE_PROCESSOR ? R.string.toast_not_detect_face : R.string.toast_not_detect_body);
+                mTrackingText.setVisibility(status > 0 ? View.INVISIBLE : View.VISIBLE);
+            });
+        }
+
+        @Override
+        public void onFpsChanged(double fps, double callTime) {
+
+        }
+    };
 
     public void goneFaceUnityView() {
         mHandler.postDelayed(new Runnable() {
@@ -210,6 +235,7 @@ public class ControlFragment extends Fragment {
         mControlView = mFragmentView.findViewById(R.id.control_view);
         mPicStreamingImageView = mFragmentView.findViewById(R.id.picture_streaming_image);
         mFaceUnityView = mFragmentView.findViewById(R.id.face_unity);
+        mTrackingText = mFragmentView.findViewById(R.id.iv_face_detect);
 
         Bundle bundle = getArguments();
         if (bundle != null) {
