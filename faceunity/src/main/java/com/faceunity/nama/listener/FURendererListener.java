@@ -8,10 +8,6 @@ import com.faceunity.core.enumeration.FUAIProcessorEnum;
  */
 public interface FURendererListener {
 
-    /**
-     * prepare完成回调
-     */
-    void onPrepare();
 
     /**
      * 识别到的人脸或人体数量发生变化
@@ -29,12 +25,6 @@ public interface FURendererListener {
      * @param callTime 渲染函数调用时间
      */
     void onFpsChanged(double fps, double callTime);
-
-
-    /**
-     * release完成回调
-     */
-    void onRelease();
 
 
 }

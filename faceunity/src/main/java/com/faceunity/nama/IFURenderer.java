@@ -22,14 +22,13 @@ abstract class IFURenderer {
      */
     protected FUExternalInputEnum externalInputType = FUExternalInputEnum.EXTERNAL_INPUT_TYPE_CAMERA;//数据源类型
     protected FUInputTextureEnum inputTextureType = FUInputTextureEnum.FU_ADM_FLAG_EXTERNAL_OES_TEXTURE;//纹理类型
-    protected FUInputBufferEnum inputBufferType = FUInputBufferEnum.FU_FORMAT_I420_BUFFER;//数据类型
-    protected int inputOrientation = 270;//数据源朝向
-    protected int deviceOrientation = 90;//手机设备朝向
+    protected FUInputBufferEnum inputBufferType = FUInputBufferEnum.FU_FORMAT_NV21_BUFFER;//数据类型
+    protected int inputOrientation = 90;//数据源朝向
+    protected int deviceOrientation = 270;//手机设备朝向
     protected CameraFacingEnum cameraFacing = CameraFacingEnum.CAMERA_FRONT;  //数据源为相机时候->前后置相机
     protected FUTransformMatrixEnum inputTextureMatrix = FUTransformMatrixEnum.CCROT0_FLIPVERTICAL;//纹理旋转类型
     protected FUTransformMatrixEnum inputBufferMatrix = FUTransformMatrixEnum.CCROT0_FLIPVERTICAL;//图象旋转类型
     protected FUTransformMatrixEnum outputMatrix = FUTransformMatrixEnum.CCROT0;//图象旋转类型
-
 
     /**
      * 初始化鉴权
@@ -50,13 +49,6 @@ abstract class IFURenderer {
      */
     public abstract int onDrawFrameDualInput(byte[] img, int texId, int width, int height);
 
-    /**
-     * 类似 GLSurfaceView 的 queueEvent 机制，把任务抛到 GL 线程执行。
-     *
-     * @param runnable
-     */
-    public abstract void queueEvent(Runnable runnable);
-
 
     /**
      * 设置检测类型
@@ -73,7 +65,7 @@ abstract class IFURenderer {
     /**
      * 开启合成状态
      */
-    public abstract void prepareRenderer(FURendererListener mFURendererListener);
+    public abstract void bindListener(FURendererListener mFURendererListener);
 
 
     /**
@@ -82,7 +74,6 @@ abstract class IFURenderer {
      * @param enable
      */
     public abstract void setMarkFPSEnable(boolean enable);
-
 
 
     /**

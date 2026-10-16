@@ -118,7 +118,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
 
     private ControlFragment mControlFragment;
 
-    private TextView mTrackingText;
+    public TextView mTrackingText;
     private CameraPreviewFrameView mCameraPreviewFrameView;
 
     // 用作演示自定义美颜实现逻辑
@@ -508,7 +508,7 @@ public class AVStreamingActivity extends AppCompatActivity implements
                     Log.d(TAG, "onSurfaceCreated: ");
                     FURenderKit.getInstance().releaseSafe();
                     if (mFURenderer != null) {
-                        mFURenderer.setBeautyOn();
+//                        mFURenderer.setBeautyOn();
                         mControlFragment.bindDataFactory();
                         initCsvUtil(AVStreamingActivity.this);
                     }
@@ -1534,10 +1534,6 @@ public class AVStreamingActivity extends AppCompatActivity implements
      */
     private FURendererListener mFURendererListener = new FURendererListener() {
 
-        @Override
-        public void onPrepare() {
-
-        }
 
         @Override
         public void onTrackStatusChanged(FUAIProcessorEnum type, int status) {
@@ -1552,10 +1548,6 @@ public class AVStreamingActivity extends AppCompatActivity implements
 
         }
 
-        @Override
-        public void onRelease() {
-
-        }
     };
 
     private void initCsvUtil(Context context) {
